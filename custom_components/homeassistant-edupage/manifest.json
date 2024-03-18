@@ -1,5 +1,5 @@
 {
-    "domain": "edupage",
+    "domain": "homeassistant-edupage",
     "name": "homeassistant-edupage",
     "version": "0.0.1",
     "documentation": "https://github.com/rine77/homeassistant-edupage",
