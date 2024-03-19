@@ -1,18 +1,13 @@
 import voluptuous as vol
 import logging
 from datetime import datetime, timedelta
-from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.core import HomeAssistant
 from .homeassistant_edupage import Edupage
-from .const import DOMAIN
 
-from homeassistant.components.calendar import (
-    CalendarEntity,
-    CalendarEventDevice,
-)
+from homeassistant.components.calendar import CalendarEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,26 +30,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             _LOGGER.error(f"error updating data: {e}")
             raise UpdateFailed(F"error updating data: {e}")
 
-    coordinator = DataUpdateCoordinator(
-        hass,
-        logger=_LOGGER,
-        name="grades",
-        update_method=async_update_data,
-        update_interval=timedelta(hours=1),
-    )
-
-    await coordinator.async_refresh()
-
     async_add_entities([TimetableCalendar(edupage, unique_id)], True)
 
 class TimetableCalendar(CalendarEntity):
-    def __init__(self, edupage, unique_id, timetable, coordinator):
-        self._timetable = timetable
+    def __init__(self, edupage, unique_id):
         self.edupage = edupage
         self._attr_unique_id = unique_id
-        self.coordinator = coordinator        
-
+     
     @property
     def name(self):
         """return name of calendar"""
-        return "TT calendar"
+        return self._name
+    
+    async def async_get_events(self, today: datetime):
+        timetable = self.get_timetable(today)
+        # Konvertieren Sie 'timetable' in eine Liste von Ereignissen, die von dieser Methode zurückgegeben werden
+        return timetable #dict

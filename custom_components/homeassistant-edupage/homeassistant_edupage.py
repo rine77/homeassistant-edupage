@@ -15,11 +15,11 @@ class Edupage:
         grades = await self.hass.async_add_executor_job(self.api.get_grades)
         return grades
 
-    async def async_update(self):
-
-        pass
-
     async def get_timetable(self, dateTT: datetime):
 
         timetable = await self.hass.aync_add_executor_job(self.api.get_timetable(dateTT))
         return timetable
+
+    async def async_update(self):
+
+        pass

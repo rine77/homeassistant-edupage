@@ -6,7 +6,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.core import HomeAssistant
 from .homeassistant_edupage import Edupage
-from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +38,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
     await coordinator.async_refresh()
 
-    async_add_entities([EdupageSensor(edupage, unique_id_sensor)], True)
     async_add_entities([GradesSensor(edupage, unique_id_sensorGrade, coordinator)], True)
 
 class GradesSensor(SensorEntity):
@@ -61,30 +59,3 @@ class GradesSensor(SensorEntity):
     def extra_state_attributes(self):
 
         return {"grades": self.coordinator.data}
-
-class EdupageSensor(SensorEntity):
-    def __init__(self, edupage: Edupage, unique_id: str):
-        self.edupage = edupage
-        self._attr_unique_id = unique_id
-        self._state = None
-
-    @property
-    def name(self):
-        """return name of the sensor"""
-        return "Edupage Sensor"
-
-    @property
-    def state(self):
-        """return state of the sensor"""
-        return self._state
-
-    @property
-    def unique_id(self):
-        """return unique_id of the sensor"""
-        return self._attr_unique_id
-
-    async def async_update(self):
-        """update state of the sensor"""
-
-        pass
-
