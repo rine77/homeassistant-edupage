@@ -17,7 +17,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     subdomain = entry.data["subdomain"]
 
     edupage = Edupage(hass)
-    unique_id = f"edupage_{username}_sensor"
+    unique_id_sensor = f"edupage_{username}_sensor"
+    unique_id_sensorGrade = f"edupage_{username}_gradesensor"
     await hass.async_add_executor_job(edupage.login, username, password, subdomain)
 
     async def async_update_data():
@@ -38,11 +39,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
     await coordinator.async_refresh()
 
-    async_add_entities([EdupageSensor(edupage, unique_id)], True)
-    async_add_entities([GradesSensor(coordinator)], True)
+    async_add_entities([EdupageSensor(edupage, unique_id_sensor)], True)
+    async_add_entities([GradesSensor(edupage, unique_id_sensorGrade, coordinator)], True)
 
 class GradesSensor(SensorEntity):
-    def __init__(self, coordinator):
+    def __init__(self, edupage: Edupage, unique_id: str, coordinator):
+        self.edupage = edupage
+        self._attr_unique_id = unique_id
         self.coordinator = coordinator
 
     @property
