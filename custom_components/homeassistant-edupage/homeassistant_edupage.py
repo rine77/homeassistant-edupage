@@ -1,4 +1,5 @@
 from edupage_api import Edupage as APIEdupage
+from datetime import datetime
 
 class Edupage:
     def __init__(self,hass):
@@ -17,3 +18,8 @@ class Edupage:
     async def async_update(self):
 
         pass
+
+    async def get_timetable(self, dateTT: datetime):
+
+        timetable = await self.hass.aync_add_executor_job(self.api.get_timetable(dateTT))
+        return timetable

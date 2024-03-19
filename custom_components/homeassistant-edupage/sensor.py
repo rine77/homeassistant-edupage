@@ -87,3 +87,4 @@ class EdupageSensor(SensorEntity):
         """update state of the sensor"""
 
         pass
+
