@@ -3,7 +3,7 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from .homeassistant-edupage import Edupage
+from .homeassistant_edupage import Edupage
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
