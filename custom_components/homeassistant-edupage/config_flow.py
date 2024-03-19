@@ -20,10 +20,9 @@ class EdupageConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            # validate this and that - later
+
             return self.async_create_entry(title="Edupage", data=user_input)
 
-        # data schema for user input
         data_schema = vol.Schema({
             vol.Required(CONF_USERNAME): str,
             vol.Required(CONF_PASSWORD): str,

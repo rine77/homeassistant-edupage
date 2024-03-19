@@ -1,7 +1,9 @@
 import logging
+from datetime import timedelta
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.core import HomeAssistant
 from .homeassistant_edupage import Edupage
 from .const import DOMAIN
@@ -9,16 +11,54 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
-    # config data from config_flow
+
     username = entry.data["username"]
     password = entry.data["password"]
     subdomain = entry.data["subdomain"]
 
-    edupage = Edupage()
+    edupage = Edupage(hass)
     unique_id = f"edupage_{username}_sensor"
     await hass.async_add_executor_job(edupage.login, username, password, subdomain)
 
     async_add_entities([EdupageSensor(edupage, unique_id)], True)
+
+    async def async_update_data():
+
+        try:
+            return await edupage.get_grades()
+        except Exception as e:
+            _LOGGER.error(f"error updating data: {e}")
+            raise UpdateFailed(F"error updating data: {e}")
+
+    coordinator = DataUpdateCoordinator(
+        hass,
+        logger=_LOGGER,
+        name="grades",
+        update_method=async_update_data,
+        update_interval=timedelta(hours=1),
+    )
+
+    await coordinator.async_refresh()
+
+    async_add_entities([GradesSensor(coordinator)], True)
+
+class GradesSensor(SensorEntity):
+    def __init__(self, coordinator):
+        self.coordinator = coordinator
+
+    @property
+    def name(self):
+        return "Edupage Grades"
+
+    @property
+    def state(self):
+
+        return len(self.coordinator.data) if self.coordinator.data else "N/A"
+
+    @property
+    def extra_state_attributes(self):
+
+        return {"grades": self.coordinator.data}
 
 class EdupageSensor(SensorEntity):
     def __init__(self, edupage: Edupage, unique_id: str):
@@ -28,7 +68,7 @@ class EdupageSensor(SensorEntity):
 
     @property
     def name(self):
-        """return the name of the sensor"""
+        """return name of the sensor"""
         return "Edupage Sensor"
 
     @property
@@ -42,5 +82,6 @@ class EdupageSensor(SensorEntity):
         return self._attr_unique_id
 
     async def async_update(self):
-        """updates data"""
+        """update state of the sensor"""
+
         pass
