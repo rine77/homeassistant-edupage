@@ -21,7 +21,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     await hass.async_add_executor_job(edupage.login, username, password, subdomain)
 
     async def async_update_data():
-
+        _LOGGER.debug("Attempting to update grades data.")
         try:
             data = await edupage.get_grades()
             _LOGGER.debug("Grades data successfully updated")
@@ -36,12 +36,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         logger=_LOGGER,
         name="grades",
         update_method=async_update_data,
-        update_interval=timedelta(minutes=30),
+        update_interval=timedelta(minutes=10),
     )
 
-    # await coordinator.async_refresh()
     await coordinator.async_config_entry_first_refresh()
-
     async_add_entities([GradesSensor(edupage, unique_id_sensorGrade, coordinator)], True)
 
 class GradesSensor(SensorEntity):
