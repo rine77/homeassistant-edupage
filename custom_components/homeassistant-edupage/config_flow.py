@@ -24,9 +24,9 @@ class EdupageConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(title="Edupage", data=user_input)
 
         data_schema = vol.Schema({
-            vol.Required(CONF_USERNAME): str,
-            vol.Required(CONF_PASSWORD): str,
-            vol.Required(CONF_SUBDOMAIN): str,
+            vol.Required(CONF_USERNAME, default="username"): str,
+            vol.Required(CONF_PASSWORD, default="password"): str,
+            vol.Required(CONF_SUBDOMAIN, default="subdomain only"): str,
         })
 
         return self.async_show_form(

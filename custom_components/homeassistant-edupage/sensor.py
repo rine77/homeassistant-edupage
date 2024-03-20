@@ -16,14 +16,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     subdomain = entry.data["subdomain"]
 
     edupage = Edupage(hass)
-    unique_id_sensor = f"edupage_{username}_sensor"
+    
     unique_id_sensorGrade = f"edupage_{username}_gradesensor"
     await hass.async_add_executor_job(edupage.login, username, password, subdomain)
 
     async def async_update_data():
 
         try:
-            return await edupage.get_grades()
+            data = await edupage.get_grades()
+            _LOGGER.debug("Grades data successfully updated")
+            grades_list = [{"Fach": grade.subject_name, "Thema": grade.title, "Note": grade.grade_n} for grade in data]
+            return grades_list
         except Exception as e:
             _LOGGER.error(f"error updating data: {e}")
             raise UpdateFailed(F"error updating data: {e}")
@@ -33,10 +36,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         logger=_LOGGER,
         name="grades",
         update_method=async_update_data,
-        update_interval=timedelta(hours=1),
+        update_interval=timedelta(minutes=30),
     )
 
-    await coordinator.async_refresh()
+    # await coordinator.async_refresh()
+    await coordinator.async_config_entry_first_refresh()
 
     async_add_entities([GradesSensor(edupage, unique_id_sensorGrade, coordinator)], True)
 

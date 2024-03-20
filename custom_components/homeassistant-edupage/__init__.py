@@ -20,4 +20,4 @@ async def async_setup_entry(hass,entry) -> bool:
 async def async_unload_entry(hass,entry) -> bool:
     """unload ConfigEntry"""
 
-    return await hass.config_entries.async_forward_entry_unload(entry, 'sensor')
+    return await hass.config_entries.async_forward_entry_unload(entry, Platform.SENSOR)
