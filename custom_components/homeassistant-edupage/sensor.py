@@ -6,6 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.core import HomeAssistant
 from .homeassistant_edupage import Edupage
+from .subjects import subject_long
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         try:
             data = await edupage.get_grades()
             _LOGGER.debug("Grades data successfully updated")
-            grades_list = [{"Fach": grade.subject_name, "Thema": grade.title, "Note": grade.grade_n} for grade in data]
+            grades_list = [{"Fach": subject_long(grade.subject_name), "Thema": grade.title, "Note": grade.grade_n} for grade in data]
             return grades_list
         except Exception as e:
             _LOGGER.error(f"error updating data: {e}")
