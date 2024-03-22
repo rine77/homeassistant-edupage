@@ -8,6 +8,8 @@ from homeassistant.core import HomeAssistant
 from .homeassistant_edupage import Edupage
 from .subjects import subject_long
 
+SCAN_INTERVAL = timedelta(minutes=3)
+
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
@@ -62,3 +64,8 @@ class GradesSensor(SensorEntity):
     def extra_state_attributes(self):
 
         return {"grades": self.coordinator.data}
+
+    def get_grades(self):
+
+        return {"grades": self.coordinator.data}
+    

@@ -10,7 +10,6 @@ def subject_long(subject_short):
         "Eth": "Ethik",
         "Ku": "Kunst",
         "Sp": "Sport"
-        # Füge hier weitere Kürzel und ihre entsprechenden Wörter hinzu
     }
 
-    return subject_dict.get(subject_short, "Unbekanntes Kürzel")
+    return subject_dict.get(subject_short, "unknown subject")
