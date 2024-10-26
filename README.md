@@ -7,3 +7,6 @@ An HomeAssistant integration of the EduPage Schooling System based on the edupag
 * Add new integration and search for "Edupage"
 * enter Username, Password and Subdomain (w/o ".edupage.org")
 * you should find at least 1 sensor now in your sensors list called something like "edupage"
+* data is to be found as "attributes", see screenshot
+
+![screenshot of entity](./img/edupage_grades.jpg)
