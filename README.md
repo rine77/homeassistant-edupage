@@ -6,7 +6,9 @@ An HomeAssistant integration of the EduPage Schooling System based on the edupag
 * restart Home Assistant
 * Add new integration and search for "Edupage"
 * enter Username, Password and Subdomain (w/o ".edupage.org")
-* you should find at least 1 sensor now in your sensors list called something like "edupage"
+* based on your subjects you should find more or less sensors now, named bei the subject with grade-counts
 * data is to be found as "attributes", see screenshot
 
-![screenshot of entity](./img/edupage_grades.jpg)
+![screenshot of sensors](./img/edupage_subjects_grades.jpg)
+
+![screenshot of sensor with attributes](./img/edupage_subjects_grades_attribues.jpg)
