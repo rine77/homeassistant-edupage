@@ -1,12 +1,12 @@
 {
     "domain": "homeassistant-edupage",
     "name": "homeassistant-edupage",
-    "version": "0.1.0",
-    "documentation": "https://github.com/rine77/homeassistant-edupage",
-    "dependencies": [],
-    "issue_tracker": "https://github.com/rine77/homeassistant-edupage/issues",
     "codeowners": ["@rine77"],
-    "requirements": ["edupage_api==0.11.0"],
+    "config_flow": true,
+    "dependencies": [],
+    "documentation": "https://github.com/rine77/homeassistant-edupage",
     "iot_class": "cloud_polling",
-    "config_flow": true
+    "issue_tracker": "https://github.com/rine77/homeassistant-edupage/issues",
+    "requirements": ["edupage_api==0.11.0"],
+    "version": "0.1.0"
 }
