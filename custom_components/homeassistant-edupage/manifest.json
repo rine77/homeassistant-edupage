@@ -1,7 +1,7 @@
 {
     "domain": "homeassistant-edupage",
     "name": "homeassistant-edupage",
-    "version": "0.0.3",
+    "version": "0.1.0",
     "documentation": "https://github.com/rine77/homeassistant-edupage",
     "dependencies": [],
     "codeowners": ["@rine77"],
