@@ -11,10 +11,8 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 async def async_setup_entry(hass,entry) -> bool:
     """create ConfigEntry"""
 
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, Platform.SENSOR)
-    )
-    
+    await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
+   
     return True
 
 async def async_unload_entry(hass,entry) -> bool:

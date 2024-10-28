@@ -5,7 +5,7 @@
     "documentation": "https://github.com/rine77/homeassistant-edupage",
     "dependencies": [],
     "codeowners": ["@rine77"],
-    "requirements": ["edupage_api==0.10.8"],
+    "requirements": ["edupage_api==0.11.0"],
     "iot_class": "cloud_polling",
     "config_flow": true
 }
