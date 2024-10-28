@@ -1,71 +1,37 @@
+from datetime import datetime
 import logging
-from datetime import timedelta
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.core import HomeAssistant
-from .homeassistant_edupage import Edupage
-from .subjects import subject_long
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from .const import DOMAIN
 
-SCAN_INTERVAL = timedelta(minutes=3)
+_LOGGER = logging.getLogger("custom_components.homeassistant_edupage")
 
-_LOGGER = logging.getLogger(__name__)
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
+    """Set up EduPage sensor based on a config entry."""
+    # access coordinator via hass.data
+    coordinator = hass.data[DOMAIN][entry.entry_id]
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
+    async_add_entities([EduPageSensor(coordinator, entry)], True)
 
-    username = entry.data["username"]
-    password = entry.data["password"]
-    subdomain = entry.data["subdomain"]
+class EduPageSensor(CoordinatorEntity, SensorEntity):
+    """Sensor-Entity for EduPage-grades."""
 
-    edupage = Edupage(hass)
-    
-    unique_id_sensorGrade = f"edupage_{username}_gradesensor"
-    await hass.async_add_executor_job(edupage.login, username, password, subdomain)
-
-    async def async_update_data():
-        _LOGGER.debug("Attempting to update grades data.")
-        try:
-            data = await edupage.get_grades()
-            _LOGGER.debug("Grades data successfully updated")
-            grades_list = [{"Fach": subject_long(grade.subject_name), "Thema": grade.title, "Note": grade.grade_n} for grade in data]
-            return grades_list
-        except Exception as e:
-            _LOGGER.error(f"error updating data: {e}")
-            raise UpdateFailed(F"error updating data: {e}")
-
-    coordinator = DataUpdateCoordinator(
-        hass,
-        logger=_LOGGER,
-        name="grades",
-        update_method=async_update_data,
-        update_interval=timedelta(minutes=10),
-    )
-
-    await coordinator.async_config_entry_first_refresh()
-    async_add_entities([GradesSensor(edupage, unique_id_sensorGrade, coordinator)], True)
-
-class GradesSensor(SensorEntity):
-    def __init__(self, edupage: Edupage, unique_id: str, coordinator):
-        self.edupage = edupage
-        self._attr_unique_id = unique_id
-        self.coordinator = coordinator
-
-    @property
-    def name(self):
-        return "Edupage Grades"
+    def __init__(self, coordinator, entry):
+        """initializing sensor."""
+        super().__init__(coordinator)
+        self.entry = entry
+        self._attr_name = "EduPage Grade Sensor"  # sensor name
+        self._attr_unique_id = f"edupage_{entry.data['username']}_gradesensor" # uniqueID
 
     @property
     def state(self):
+        """returns grade count as sensor state"""
+        data = self.coordinator.data
+        
+        if isinstance(data, list):
+            return len(data)  # Anzahl der Einträge in der Liste
+        return 0  # Fallback-Wert, falls data keine Liste ist
 
-        return len(self.coordinator.data) if self.coordinator.data else "N/A"
-
-    @property
-    def extra_state_attributes(self):
-
-        return {"grades": self.coordinator.data}
-
-    def get_grades(self):
-
-        return {"grades": self.coordinator.data}
-    
