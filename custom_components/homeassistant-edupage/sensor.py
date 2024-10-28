@@ -1,71 +1,48 @@
-import logging
-from datetime import timedelta
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.core import HomeAssistant
-from .homeassistant_edupage import Edupage
-from .subjects import subject_long
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from .const import DOMAIN
 
-SCAN_INTERVAL = timedelta(minutes=3)
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
+    """Set up EduPage sensors based on subjects in the data."""
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    subjects = {}
 
-_LOGGER = logging.getLogger(__name__)
+    # Sortiere Noten nach Fächern
+    for grade in coordinator.data:
+        subject = grade.subject_name
+        if subject not in subjects:
+            subjects[subject] = []
+        subjects[subject].append(grade)
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
+    # Erstelle für jedes Fach einen Sensor
+    sensors = [EduPageSubjectSensor(coordinator, subject, grades) for subject, grades in subjects.items()]
+    async_add_entities(sensors, True)
 
-    username = entry.data["username"]
-    password = entry.data["password"]
-    subdomain = entry.data["subdomain"]
+class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
+    """Sensor-Entität für ein bestimmtes Unterrichtsfach."""
 
-    edupage = Edupage(hass)
-    
-    unique_id_sensorGrade = f"edupage_{username}_gradesensor"
-    await hass.async_add_executor_job(edupage.login, username, password, subdomain)
-
-    async def async_update_data():
-        _LOGGER.debug("Attempting to update grades data.")
-        try:
-            data = await edupage.get_grades()
-            _LOGGER.debug("Grades data successfully updated")
-            grades_list = [{"Fach": subject_long(grade.subject_name), "Thema": grade.title, "Note": grade.grade_n} for grade in data]
-            return grades_list
-        except Exception as e:
-            _LOGGER.error(f"error updating data: {e}")
-            raise UpdateFailed(F"error updating data: {e}")
-
-    coordinator = DataUpdateCoordinator(
-        hass,
-        logger=_LOGGER,
-        name="grades",
-        update_method=async_update_data,
-        update_interval=timedelta(minutes=10),
-    )
-
-    await coordinator.async_config_entry_first_refresh()
-    async_add_entities([GradesSensor(edupage, unique_id_sensorGrade, coordinator)], True)
-
-class GradesSensor(SensorEntity):
-    def __init__(self, edupage: Edupage, unique_id: str, coordinator):
-        self.edupage = edupage
-        self._attr_unique_id = unique_id
-        self.coordinator = coordinator
-
-    @property
-    def name(self):
-        return "Edupage Grades"
+    def __init__(self, coordinator, subject_name, grades):
+        """Initialisierung des Fach-Sensors."""
+        super().__init__(coordinator)
+        self._subject_name = subject_name
+        self._grades = grades
+        self._attr_name = f"EduPage Noten - {subject_name}"  # Name des Sensors basierend auf dem Fach
+        self._attr_unique_id = f"edupage_grades_{subject_name.lower().replace(' ', '_')}"
 
     @property
     def state(self):
-
-        return len(self.coordinator.data) if self.coordinator.data else "N/A"
+        """Gibt die Anzahl der Noten für dieses Fach zurück."""
+        return len(self._grades)
 
     @property
     def extra_state_attributes(self):
-
-        return {"grades": self.coordinator.data}
-
-    def get_grades(self):
-
-        return {"grades": self.coordinator.data}
-    
+        """Rückgabe zusätzlicher Attribute für den Sensor."""
+        attributes = {}
+        for i, grade in enumerate(self._grades):
+            attributes[f"grade_{i+1}_title"] = grade.title
+            attributes[f"grade_{i+1}_grade_n"] = grade.grade_n
+            attributes[f"grade_{i+1}_date"] = grade.date.strftime("%Y-%m-%d %H:%M:%S")
+        return attributes
