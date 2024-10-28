@@ -17,3 +17,7 @@ jobs:
 
       - name: Validate with HACS
         uses: hacs/action@main
+
+      - name: HACS Action
+        uses: hacs/action@22.5.0
+            
