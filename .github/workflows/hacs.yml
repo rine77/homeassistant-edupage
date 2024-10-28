@@ -1,24 +1,17 @@
-name: Check HACS repository
+name: HACS Action
 
 on:
   push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
+  schedule:
+    - cron: "0 0 * * *"
 
 jobs:
   hacs:
-    runs-on: ubuntu-latest
+    name: HACS Action
+    runs-on: "ubuntu-latest"
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Validate with HACS
-        uses: hacs/action@main
-
       - name: HACS Action
-        uses: hacs/action@22.5.0
+        uses: "hacs/action@main"
         with:
-          category: integration
+          category: "integration"
