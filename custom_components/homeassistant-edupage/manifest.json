@@ -1,5 +1,5 @@
 {
-    "domain": "homeassistant-edupage",
+    "domain": "homeassistantedupage",
     "name": "homeassistant-edupage",
     "codeowners": ["@rine77"],
     "config_flow": true,
