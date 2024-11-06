@@ -1,8 +1,8 @@
-# homeassistant-edupage
+# homeassistantedupage
 An HomeAssistant integration of the EduPage Schooling System based on the edupage_api library found here https://github.com/EdupageAPI/edupage-api
 
 ## Installation without HACS
-* Extract files in /custom_components/homeassistant-edupage to your installation.
+* Extract files in /custom_components/homeassistantedupage to your installation.
 * restart Home Assistant
 * Add new integration and search for "Edupage"
 * enter Username, Password and Subdomain (w/o ".edupage.org")
@@ -12,7 +12,7 @@ An HomeAssistant integration of the EduPage Schooling System based on the edupag
 ## Installation with HACS
 * get HACS up and running
 * add custom repository (3 dots upper right corner)
-* URL: [https://github.com/rine77/homeassistant-edupage](https://github.com/rine77/homeassistant-edupage)
+* URL: [https://github.com/rine77/homeassistantedupage](https://github.com/rine77/homeassistantedupage)
 
 ![screenshot of sensors](./img/edupage_subjects_grades.jpg)
 
