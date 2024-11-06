@@ -10,9 +10,20 @@ An HomeAssistant integration of the EduPage Schooling System based on the edupag
 * data is to be found as "attributes", see screenshot
 
 ## Installation with HACS
-* get HACS up and running
-* add custom repository (3 dots upper right corner)
-* URL: [https://github.com/rine77/homeassistantedupage](https://github.com/rine77/homeassistantedupage)
+* open HACS
+* click 3 dots upper right corner
+* select "custom repositories" or something similar
+* enter repository URL [https://github.com/rine77/homeassistantedupage](https://github.com/rine77/homeassistantedupage)
+* type "integration"
+* add
+* choose download
+* please alway select at least a release with "HACS" in releasename
+* restart HA
+* add integration
+* look for "edupage"
+* use "homeassistantedupage" integration
+* enter login, password und (ONLY!) subdomain (no .edupage.com or something)
+* if there are grades in your account there should spawn one ore more entities
 
 ![screenshot of sensors](./img/edupage_subjects_grades.jpg)
 
