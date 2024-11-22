@@ -10,6 +10,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from .homeassistant_edupage import Edupage
 from .const import DOMAIN
 
+PLATFORMS = ["sensor", "calendar"]
+
 _LOGGER = logging.getLogger("custom_components.homeassistant_edupage")
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
