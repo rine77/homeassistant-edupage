@@ -1,3 +1,4 @@
+import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -5,8 +6,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
 
+_LOGGER = logging.getLogger("custom_components.homeassistant_edupage")
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     """Set up EduPage sensors based on subjects in the data."""
+    _LOGGER.info("SENSOR called async_setup_entry")
     coordinator = hass.data[DOMAIN][entry.entry_id]
     subjects = {}
 
