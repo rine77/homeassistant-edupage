@@ -54,27 +54,43 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             try:
                 # request classes
                 classes_data = await edupage.get_classes()
-#                _LOGGER.info("INIT classes count: " + str(len(classes_data)))
+                _LOGGER.info("INIT classes fount: " + str(len(classes_data)))
+                # _LOGGER.info("INIT classes %s", classes_data)
                     
                 # request grades
                 grades_data = await edupage.get_grades()
-#                _LOGGER.info("INIT grade count: " + str(len(grades_data)))
+                _LOGGER.info("INIT grades fount: " + str(len(grades_data)))
 
                 # request user_id
                 userid = await edupage.get_user_id()
-#                _LOGGER.info("INIT user_id: "+str(userid))
+                _LOGGER.info("INIT user_id: "+str(userid))
 
                 # request all possible subjects
                 subjects_data = await edupage.get_subjects()
-#                _LOGGER.info("INIT subject count: " + str(len(subjects_data)))
+                _LOGGER.info("INIT subjects fount: " + str(len(subjects_data)))
 
                 # request all possible students
                 students_data = await edupage.get_students()
-#                _LOGGER.info("INIT students count: " + str(len(students_data)))
+                _LOGGER.info("INIT students fount: " + str(len(students_data)))
+
+                # request all the teachers
+                teachers_data = await edupage.get_teachers()
+                _LOGGER.info("INIT teachers found " + str(len(teachers_data)))
+
+                # request all the classrooms
+                classrooms_data = await edupage.get_classrooms()
+                _LOGGER.info("INIT classrooms found: " + str(len(classrooms_data)))
+
+                # request timetable
+                timetable_data = await edupage.get_timetable()
+                if timetable_data is None:
+                    _LOGGER.info("INIT timettable_data is None")
+                else:
+                    _LOGGER.info("INIT lessons found: %s", str(len(timetable_data.lessons)))
 
                 return {
                     "grades": grades_data,
-#                    "timetable": timetable_data,
+                    "timetable": timetable_data,
                     "user_id": userid,
                     "subjects": subjects_data
                 }
@@ -100,7 +116,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
     # Forward platforms
-    await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
+    await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR, Platform.CALENDAR])
 
     return True
 
