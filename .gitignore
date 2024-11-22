@@ -161,3 +161,6 @@ cython_debug/
 
 # secrets
 *creds.sec*
+
+# test
+test/

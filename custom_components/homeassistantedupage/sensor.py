@@ -1,48 +1,72 @@
+import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
+from collections import defaultdict
+
+_LOGGER = logging.getLogger("custom_components.homeassistant_edupage")
+
+def group_grades_by_subject(grades):
+    """grouping grades based on subject_id."""
+    grouped = defaultdict(list)
+    for grade in grades:
+        grouped[grade.subject_id].append(grade)
+    return grouped
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
-    """Set up EduPage sensors based on subjects in the data."""
+    """Set up EduPage sensors based on subjects and their grades."""
+    _LOGGER.info("SENSOR called async_setup_entry")
+
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    subjects = {}
+    subjects = coordinator.data.get("subjects", [])
+    grades = coordinator.data.get("grades", []) 
 
-    # Sortiere Noten nach Fächern
-    for grade in coordinator.data:
-        subject = grade.subject_name
-        if subject not in subjects:
-            subjects[subject] = []
-        subjects[subject].append(grade)
+    # group grades based on subject_id
+    grades_by_subject = group_grades_by_subject(grades)
 
-    # Erstelle für jedes Fach einen Sensor
-    sensors = [EduPageSubjectSensor(coordinator, subject, grades) for subject, grades in subjects.items()]
+    sensors = []
+    for subject in subjects:
+        # get grades per subject based on subject_id
+        subject_grades = grades_by_subject.get(subject.subject_id, [])
+        sensor = EduPageSubjectSensor(
+            coordinator,
+            subject.name,
+            subject_grades
+        )
+        sensors.append(sensor)
+
     async_add_entities(sensors, True)
 
 class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
-    """Sensor-Entität für ein bestimmtes Unterrichtsfach."""
+    """subject sensor entity."""
 
-    def __init__(self, coordinator, subject_name, grades):
-        """Initialisierung des Fach-Sensors."""
+    def __init__(self, coordinator, subject_name, grades=None):
+        """initializing"""
         super().__init__(coordinator)
         self._subject_name = subject_name
-        self._grades = grades
-        self._attr_name = f"EduPage Noten - {subject_name}"  # Name des Sensors basierend auf dem Fach
+        self._grades = grades or [] 
+        self._attr_name = f"EduPage subject - {subject_name}"
         self._attr_unique_id = f"edupage_grades_{subject_name.lower().replace(' ', '_')}"
 
     @property
     def state(self):
-        """Gibt die Anzahl der Noten für dieses Fach zurück."""
+        """return grade count"""
         return len(self._grades)
 
     @property
     def extra_state_attributes(self):
-        """Rückgabe zusätzlicher Attribute für den Sensor."""
+        """return additional attributes"""
+        if not self._grades:
+            return {"info": "no grades yet"}
+
         attributes = {}
         for i, grade in enumerate(self._grades):
             attributes[f"grade_{i+1}_title"] = grade.title
             attributes[f"grade_{i+1}_grade_n"] = grade.grade_n
             attributes[f"grade_{i+1}_date"] = grade.date.strftime("%Y-%m-%d %H:%M:%S")
+            attributes[f"grade_{i+1}_teacher"] = grade.teacher.name
         return attributes
+
