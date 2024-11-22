@@ -1,13 +1,8 @@
 # homeassistantedupage
 An HomeAssistant integration of the EduPage Schooling System based on the edupage_api library found here https://github.com/EdupageAPI/edupage-api
 
-## Installation without HACS
-* Extract files in /custom_components/homeassistantedupage to your installation.
-* restart Home Assistant
-* Add new integration and search for "Edupage"
-* enter Username, Password and Subdomain (w/o ".edupage.org")
-* based on your subjects you should find more or less sensors now, named bei the subject with grade-counts
-* data is to be found as "attributes", see screenshot
+# IMPORTANT
+In this phase of development please remove integration after update and reinstall because there are major changes.
 
 ## Installation with HACS
 * open HACS
@@ -17,13 +12,14 @@ An HomeAssistant integration of the EduPage Schooling System based on the edupag
 * type "integration"
 * add
 * choose download
-* please alway select at least a release with "HACS" in releasename
+* please alway select the last one because its work in progress
 * restart HA
 * add integration
-* look for "edupage"
+* look for "edupage" with the nice "E" icon
 * use "homeassistantedupage" integration
 * enter login, password und (ONLY!) subdomain (no .edupage.com or something)
-* if there are grades in your account there should spawn one ore more entities
+* you should see now a lot of sensors with the subjects of your school
+* grades are attributes if existing
 
 ![screenshot of sensors](./img/edupage_subjects_grades.jpg)
 

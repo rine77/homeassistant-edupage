@@ -35,7 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     except BadCredentialsException as e:
         _LOGGER.error("INIT login failed: bad credentials. %s", e)
-        return False  # stop initialization on any exception
+        return False
 
     except CaptchaException as e:
         _LOGGER.error("INIT login failed: CAPTCHA needed. %s", e)
@@ -52,38 +52,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.info("INIT called fetch_data")    
         async with fetch_lock:
             try:
+                # request classes
+                classes_data = await edupage.get_classes()
+#                _LOGGER.info("INIT classes count: " + str(len(classes_data)))
+                    
                 # request grades
                 grades_data = await edupage.get_grades()
-                _LOGGER.info("INIT grade count: " + str(len(grades_data)))
+#                _LOGGER.info("INIT grade count: " + str(len(grades_data)))
 
                 # request user_id
                 userid = await edupage.get_user_id()
-                _LOGGER.info("INIT user_id"+str(userid))
+#                _LOGGER.info("INIT user_id: "+str(userid))
 
                 # request all possible subjects
                 subjects_data = await edupage.get_subjects()
-                _LOGGER.info("INIT subject count: " + str(len(subjects_data)))                
+#                _LOGGER.info("INIT subject count: " + str(len(subjects_data)))
 
-                # Abrufen des Stundenplans mit dem aktuellen Datum
-                current_date = datetime.date(2024, 11, 6)  # Beispielformat: "2024-11-06"
-                timetable_data = await edupage.get_timetable(current_date)
+                # request all possible students
+                students_data = await edupage.get_students()
+#                _LOGGER.info("INIT students count: " + str(len(students_data)))
 
-                _LOGGER.debug("timetable_data: %s", timetable_data)  # Zeigt den Stundenplan im Log
-
-                # Kombiniere Noten und Stundenplan in einem Dictionary
                 return {
                     "grades": grades_data,
-                    "timetable": timetable_data,
+#                    "timetable": timetable_data,
                     "user_id": userid,
                     "subjects": subjects_data
                 }
 
             except Exception as e:
                 _LOGGER.error("INIT error fetching data: %s", e)
-                return {
-                    "grades": [],
-                    "timetable": []
-                }
+                return False
 
     coordinator = DataUpdateCoordinator(
         hass,
