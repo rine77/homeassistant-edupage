@@ -1,4 +1,6 @@
 import logging
+import asyncio
+
 from edupage_api import Edupage as APIEdupage
 from edupage_api.classes import Class
 from edupage_api.people import EduTeacher
@@ -18,9 +20,14 @@ class Edupage:
         self.hass = hass
         self.api = APIEdupage()
 
-    def login(self, username, password, subdomain):
+    async def login(self, username: str, password: str, subdomain: str):
+        """Perform login asynchronously."""
+        try:
+            return await asyncio.to_thread(self.api.login, username, password, subdomain)
+        except Exception as e:
+            _LOGGER.error(f"Failed to log in: {e}")
+            raise
 
-        return self.api.login(username, password, subdomain)
 
     async def get_classes(self):
 
@@ -78,18 +85,17 @@ class Edupage:
         except Exception as e:
             raise UpdateFailed(F"EDUPAGE error updating get_teachers data from API: {e}")
 
-    async def get_timetable(self, class_instance, date):
-
+    async def get_timetable(self, EduStudent, date):
         try:
-            executor = ThreadPoolExecutor(max_workers=5)
-            timetable_data = await self.hass.async_add_executor_job(self.api.get_timetable, class_instance, date)
+            timetable_data = await self.hass.async_add_executor_job(self.api.get_timetable, EduStudent, date)
             if timetable_data is None:
                 _LOGGER.info("EDUPAGE timetable is None")
             else:
-                _LOGGER.info("EDUPAGE timetable_data found")
-                return timetable_data
+                _LOGGER.debug(f"EDUPAGE timetable_data for {date}: {timetable_data}")
+            return timetable_data
         except Exception as e:
-            raise UpdateFailed(F"EDUPAGE error updating get_timetable() data from API: {e}")
+            _LOGGER.error(f"EDUPAGE error updating get_timetable() data for {date}: {e}")
+            raise UpdateFailed(f"EDUPAGE error updating get_timetable() data for {date}: {e}")
 
     async def async_update(self):
 

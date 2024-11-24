@@ -27,49 +27,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     username = entry.data["username"]
     password = entry.data["password"]
     subdomain = entry.data["subdomain"]
+    student_id = entry.data["student_id"]
     edupage = Edupage(hass)
-
-    try:
-        # _LOGGER.debug("Begin creating first teacher instance")
-        teacher1 = EduTeacher(
-            person_id=-17,
-            name="Anka Kehr",
-            gender=Gender.FEMALE,
-            in_school_since=None,
-            classroom_name="Haus 1 R 08",
-            teacher_to=None
-        )
-        # _LOGGER.debug("First teacher instance created: %s", teacher1)
-
-        teacher2 = EduTeacher(
-            person_id=-25,
-            name="Christiane Koch",
-            gender=Gender.FEMALE,
-            in_school_since=None,
-            classroom_name="Haus 1 R 08",
-            teacher_to=None
-        )
-        # _LOGGER.debug("Teacher2 created successfully: %s", teacher2)
-
-        classroom = Classroom(
-            classroom_id=-12,
-            name="Haus 1 R 08",
-            short="H1 R08"
-        )
-        # _LOGGER.debug("Classroom created successfully: %s", classroom)
-
-        class_instance = Class(
-            class_id=-28,
-            name="4b",
-            short="4b",
-            homeroom_teachers=[teacher1, teacher2],
-            homeroom=classroom,
-            grade=None
-        )
-        # _LOGGER.debug("Class instance created successfully: %s", class_instance)
-
-    except Exception as e:
-        _LOGGER.error("INIT Error during instantiation: %s", e)
 
     try:
         login_success = await hass.async_add_executor_job(
@@ -92,44 +51,43 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     fetch_lock = asyncio.Lock() 
 
     async def fetch_data():
-        """Function to fetch grade and timetable data."""
-        _LOGGER.info("INIT called fetch_data")    
+        """Function to fetch timetable data for the selected student."""
+        _LOGGER.info("INIT called fetch_data")
 
         async with fetch_lock:
             try:
-                # Daten abrufen
-                classes_data = await edupage.get_classes()
-                grades_data = await edupage.get_grades()
-                userid = await edupage.get_user_id()
-                subjects_data = await edupage.get_subjects()
-                students_data = await edupage.get_students()
-                teachers_data = await edupage.get_teachers()
-                classrooms_data = await edupage.get_classrooms()
+                await edupage.login(username, password, subdomain)
 
-                # Stundenplan für die nächsten 14 Tage abrufen
-                today = datetime.now().date()
+                students = await edupage.get_students()
+                student = next((s for s in students if s.person_id == student_id), None)
+                _LOGGER.info("INIT Student: %s", student)
+
+                if not student:
+                    _LOGGER.error("No matching student found with ID: %s", student_id)
+                    return {"timetable": {}}
+
+                _LOGGER.debug("Found EduStudent: %s", vars(student))
+
                 timetable_data = {}
+                today = datetime.now().date()
                 for offset in range(14):
                     current_date = today + timedelta(days=offset)
-                    timetable_data[current_date] = await edupage.get_timetable(class_instance, current_date)
+                    timetable = await edupage.get_timetable(student, current_date)
+                    if timetable:
+                        _LOGGER.debug(f"Timetable for {current_date}: {timetable}")
+                        timetable_data[current_date] = timetable
+                    else:
+                        _LOGGER.warning(f"No timetable found for {current_date}")
 
-                _LOGGER.info("INIT got timetables before return")
-
-                # Daten zusammenstellen
                 return {
-                    "classes": classes_data,
-                    "grades": grades_data,
-                    "user_id": userid,
-                    "subjects": subjects_data,
-                    "students": students_data,
-                    "teachers": teachers_data,
-                    "classrooms": classrooms_data,
+                    "student": {"id": student.person_id, "name": student.name},
                     "timetable": timetable_data,
                 }
 
             except Exception as e:
-                _LOGGER.error("INIT Failed to fetch Edupage data: %s", e)
-                return False
+                _LOGGER.error("Failed to fetch timetable: %s", e)
+                return {"timetable": {}}
+
 
     try:
         coordinator = DataUpdateCoordinator(
@@ -162,8 +120,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload ConfigEntry."""
-    _LOGGER.info("INIT called async_unload_entry")    
-    unload_ok = await hass.config_entries.async_forward_entry_unload(entry, ["calendar"])
+    _LOGGER.info("INIT called async_unload_entry")
+    unload_ok = await hass.config_entries.async_forward_entry_unload(entry, "calendar")
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
     return unload_ok

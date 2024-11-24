@@ -50,14 +50,17 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
         _LOGGER.info(f"CALENDAR Initialized EdupageCalendar with data: {data}")
 
     @property
-    def name(self):
-        return "Edupage Calendar"
-
-    @property
     def unique_id(self):
         """Return a unique ID for this calendar."""
-        return f"edupage_calendar_{self._data.get('subdomain', 'default')}"
+        student_id = self.coordinator.data.get("student", {}).get("id", "unknown")
+        return f"edupage_calendar_{student_id}"
 
+    @property
+    def name(self):
+        """Return the name of the calendar."""
+        student_name = self.coordinator.data.get("student", {}).get("name", "Unknown Student")
+        return f"Edupage - {student_name}"
+        
     @property
     def extra_state_attributes(self):
         """Return the extra state attributes."""
@@ -85,47 +88,44 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
         )
 
     async def async_get_events(self, hass, start_date: datetime, end_date: datetime):
-
         """Return events in a specific date range."""
         local_tz = ZoneInfo(self.hass.config.time_zone)
         events = []
 
-        _LOGGER.info(f"CALENDAR Fetching events from {start_date} to {end_date}")
-
-        # Prüfen, ob 'timetable' im Coordinator existiert
         timetable = self.coordinator.data.get("timetable")
         if not timetable:
             _LOGGER.warning("CALENDAR Timetable data is missing.")
             return events
 
-        # Iteriere über alle Tage im Zeitraum
+        # Iteriere über die Tage und Lektionen im Stundenplan
         current_date = start_date.date()
         while current_date <= end_date.date():
             day_timetable = timetable.get(current_date)
-            if day_timetable and day_timetable.lessons:
-                # Iteriere über alle Lektionen des Tages
-                for lesson in day_timetable.lessons:
-                    start = datetime.combine(current_date, lesson.start_time).replace(tzinfo=local_tz)
-                    end = datetime.combine(current_date, lesson.end_time).replace(tzinfo=local_tz)
+            if day_timetable:
+                for lesson in day_timetable:
+                    # Debug die Attribute des Lesson-Objekts
+                    _LOGGER.debug(f"Lesson attributes: {vars(lesson)}")
 
-                    # Generiere CalendarEvent
+                    # Rauminformationen aus der Klasse extrahieren
+                    room = "Unknown"
+                    if lesson.classes and lesson.classes[0].homeroom:
+                        room = lesson.classes[0].homeroom.name
+
+                    # Lehrerinformationen extrahieren
+                    teacher_names = [teacher.name for teacher in lesson.teachers]
+                    teachers = ", ".join(teacher_names) if teacher_names else "Unknown Teacher"
+
+                    # Kombiniere Datum und Zeit zu einem vollständigen datetime-Objekt
+                    start_time = datetime.combine(current_date, lesson.start_time).astimezone(local_tz)
+                    end_time = datetime.combine(current_date, lesson.end_time).astimezone(local_tz)
                     events.append(
                         CalendarEvent(
-                            start=start,
-                            end=end,
-                            summary=lesson.subject.name if lesson.subject else "Unbekanntes Fach",
-                            description=(
-                                f"Lehrer: {', '.join([t.name for t in lesson.teachers])} | "
-                                f"Raum: {', '.join([c.name for c in (lesson.classrooms or [])])}"
-                                if lesson.teachers and lesson.classrooms
-                                else "Keine Details verfügbar"
-                            ),
+                            start=start_time,
+                            end=end_time,
+                            summary=lesson.subject.name if lesson.subject else "Unknown Subject",
+                            description=f"Room: {room}\nTeacher(s): {teachers}"
                         )
                     )
-            else:
-                _LOGGER.debug(f"CALENDAR No lessons found for {current_date}")
-
-            # Gehe zum nächsten Tag
             current_date += timedelta(days=1)
 
         _LOGGER.info(f"CALENDAR Fetched {len(events)} events from {start_date} to {end_date}")
