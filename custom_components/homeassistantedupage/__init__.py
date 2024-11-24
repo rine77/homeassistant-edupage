@@ -23,12 +23,15 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """initializin EduPage-integration and validate API-login"""
     _LOGGER.info("INIT called async_setup_entry")
+    if DOMAIN not in hass.data:
+        hass.data[DOMAIN] = {}  # Initialisiere den Speicherplatz für die Integration
 
     username = entry.data["username"]
     password = entry.data["password"]
     subdomain = entry.data["subdomain"]
     student_id = entry.data["student_id"]
     edupage = Edupage(hass)
+    coordinator = None
 
     try:
         login_success = await hass.async_add_executor_job(
@@ -63,10 +66,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 _LOGGER.info("INIT Student: %s", student)
 
                 if not student:
-                    _LOGGER.error("No matching student found with ID: %s", student_id)
+                    _LOGGER.error("INIT No matching student found with ID: %s", student_id)
                     return {"timetable": {}}
 
-                _LOGGER.debug("Found EduStudent: %s", vars(student))
+                #_LOGGER.debug("INIT Found EduStudent: %s", vars(student))
+
+                grades = await edupage.get_grades()
+                subjects = await edupage.get_subjects()
 
                 timetable_data = {}
                 today = datetime.now().date()
@@ -74,36 +80,53 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     current_date = today + timedelta(days=offset)
                     timetable = await edupage.get_timetable(student, current_date)
                     if timetable:
-                        _LOGGER.debug(f"Timetable for {current_date}: {timetable}")
+                        #_LOGGER.debug(f"Timetable for {current_date}: {timetable}")
                         timetable_data[current_date] = timetable
                     else:
-                        _LOGGER.warning(f"No timetable found for {current_date}")
+                        _LOGGER.warning(f"INIT No timetable found for {current_date}")
 
-                return {
+                return_data = {
                     "student": {"id": student.person_id, "name": student.name},
+                    "grades": grades,
+                    "subjects": subjects,
                     "timetable": timetable_data,
                 }
+                # _LOGGER.debug(f"INIIIIIIIIIIIIIIIIT Coordinator fetch_data returning: {return_data}")
+                return return_data
 
             except Exception as e:
-                _LOGGER.error("Failed to fetch timetable: %s", e)
+                _LOGGER.error("INIT Failed to fetch timetable: %s", e)
                 return {"timetable": {}}
 
-
     try:
+        # Erstelle den Coordinator
         coordinator = DataUpdateCoordinator(
             hass,
             _LOGGER,
-            name="EduPage Data",
+            name="Edupage",
             update_method=fetch_data,
-            update_interval=timedelta(minutes=60),
+            update_interval=timedelta(minutes=5),
         )
-        _LOGGER.info("INIT coordinator instantiated")
-    except Exception as e:
-        _LOGGER.info("INIT coordinator not instantiated")
+        hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # First data fetch
+        # Starte die erste Datenabfrage
+        await coordinator.async_config_entry_first_refresh()
+        _LOGGER.info("INIT Coordinator successfully initialized")
+
+    except Exception as e:
+        _LOGGER.error(f"INIT Error during async_setup_entry: {e}")
+
+        # Entferne unvollständige Einträge
+        if entry.entry_id in hass.data[DOMAIN]:
+            del hass.data[DOMAIN][entry.entry_id]
+
+        return False
+
+
+    ## First data fetch
     await asyncio.sleep(1)
     await coordinator.async_config_entry_first_refresh()
+    #_LOGGER.info(f"INIT Coordinator data after first fetch!")
 
     # Save coordinator
     hass.data.setdefault(DOMAIN, {})
@@ -112,7 +135,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Forward platforms
     _LOGGER.info(f"INIT Forwarding entry for platforms: calendar")
     #await hass.config_entries.async_forward_entry_setups(entry, [Platform.CALENDAR])
-    await hass.config_entries.async_forward_entry_setups(entry, ["calendar"])
+    await hass.config_entries.async_forward_entry_setups(entry, ["calendar", "sensor"])
     _LOGGER.info(f"INIT forwarded")    
     _LOGGER.debug(f"INIT Coordinator data: {coordinator.data}")
 

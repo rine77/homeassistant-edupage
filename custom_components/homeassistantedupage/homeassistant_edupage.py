@@ -7,6 +7,8 @@ from edupage_api.people import EduTeacher
 from edupage_api.people import Gender
 from edupage_api.classrooms import Classroom
 from zoneinfo import ZoneInfo
+from edupage_api.exceptions import BadCredentialsException, CaptchaException
+
 
 from datetime import datetime
 from datetime import date
@@ -23,11 +25,20 @@ class Edupage:
     async def login(self, username: str, password: str, subdomain: str):
         """Perform login asynchronously."""
         try:
-            return await asyncio.to_thread(self.api.login, username, password, subdomain)
-        except Exception as e:
-            _LOGGER.error(f"Failed to log in: {e}")
-            raise
+            result = await asyncio.to_thread(self.api.login, username, password, subdomain)
+            _LOGGER.debug(f"EDUPAGE Login successful, result: {result}")
+            return result
+        except BadCredentialsException as e:
+            _LOGGER.error("INIT login failed: bad credentials. %s", e)
+            return False
 
+        except CaptchaException as e:
+            _LOGGER.error("INIT login failed: CAPTCHA needed. %s", e)
+            return False  
+
+        except Exception as e:
+            _LOGGER.error("INIT unexpected login error: %s", e)
+            return False  
 
     async def get_classes(self):
 
@@ -91,10 +102,10 @@ class Edupage:
             if timetable_data is None:
                 _LOGGER.info("EDUPAGE timetable is None")
             else:
-                _LOGGER.debug(f"EDUPAGE timetable_data for {date}: {timetable_data}")
-            return timetable_data
+                #_LOGGER.debug(f"EDUPAGE timetable_data for {date}: {timetable_data}")
+                return timetable_data
         except Exception as e:
-            _LOGGER.error(f"EDUPAGE error updating get_timetable() data for {date}: {e}")
+            #_LOGGER.error(f"EDUPAGE error updating get_timetable() data for {date}: {e}")
             raise UpdateFailed(f"EDUPAGE error updating get_timetable() data for {date}: {e}")
 
     async def async_update(self):

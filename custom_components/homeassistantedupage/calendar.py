@@ -11,7 +11,7 @@ from collections import defaultdict
 from zoneinfo import ZoneInfo
 
 _LOGGER = logging.getLogger("custom_components.homeassistant_edupage")
-_LOGGER.info("CALENDAR - Edupage calendar.py is being loaded")
+_LOGGER.info("CALENDAR Edupage calendar.py is being loaded")
 
 async def async_setup_entry(hass, entry, async_add_entities: AddEntitiesCallback) -> None:
     """Set up Edupage calendar entities."""
@@ -24,7 +24,6 @@ async def async_setup_entry(hass, entry, async_add_entities: AddEntitiesCallback
     async_add_entities([edupage_calendar])
 
     _LOGGER.info("CALENDAR async_setup_entry finished.")
-
 
 async def async_added_to_hass(self) -> None:
     """When entity is added to hass."""
@@ -43,11 +42,11 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
 
     def __init__(self, coordinator, data):
         super().__init__(coordinator)
-        self.coordinator = coordinator
-        self._data = data
+        self._data = data  # Optional, falls du die Daten direkt verwenden möchtest.
         self._events = []
-        self._attr_name = F"EdupageCal"
+        self._attr_name = "Edupage Calendar"  # Klare und lesbare Benennung.
         _LOGGER.info(f"CALENDAR Initialized EdupageCalendar with data: {data}")
+
 
     @property
     def unique_id(self):
@@ -92,7 +91,11 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
         local_tz = ZoneInfo(self.hass.config.time_zone)
         events = []
 
-        timetable = self.coordinator.data.get("timetable")
+        _LOGGER.debug(f"CALENDAR Fetching events between {start_date} and {end_date}")
+        timetable = self.coordinator.data.get("timetable", {})
+        _LOGGER.debug(f"CALENDAR Coordinator data: {self.coordinator.data}")
+        _LOGGER.debug(f"CALENDAR Fetched timetable data: {timetable}")
+
         if not timetable:
             _LOGGER.warning("CALENDAR Timetable data is missing.")
             return events
@@ -104,7 +107,7 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
             if day_timetable:
                 for lesson in day_timetable:
                     # Debug die Attribute des Lesson-Objekts
-                    _LOGGER.debug(f"Lesson attributes: {vars(lesson)}")
+                    _LOGGER.debug(f"CALENDAR Lesson attributes: {vars(lesson)}")
 
                     # Rauminformationen aus der Klasse extrahieren
                     room = "Unknown"
