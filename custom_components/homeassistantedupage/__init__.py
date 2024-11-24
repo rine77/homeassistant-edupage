@@ -104,7 +104,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _LOGGER,
             name="Edupage",
             update_method=fetch_data,
-            update_interval=timedelta(minutes=5),
+            update_interval=timedelta(minutes=30),
         )
         hass.data[DOMAIN][entry.entry_id] = coordinator
 
