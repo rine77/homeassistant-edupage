@@ -18,19 +18,17 @@ def group_grades_by_subject(grades):
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     """Set up EduPage sensors for each student and their grades."""
-    _LOGGER.info("SENSOR called async_setup_entry")
+    _LOGGER.debug("SENSOR called async_setup_entry")
 
     coordinator = hass.data[DOMAIN][entry.entry_id]
     student = coordinator.data.get("student", {})
     subjects = coordinator.data.get("subjects", [])
     grades = coordinator.data.get("grades", [])
 
-    # group grades based on subject_id
     grades_by_subject = group_grades_by_subject(grades)
 
     sensors = []
     for subject in subjects:
-        # get grades per subject based on subject_id
         subject_grades = grades_by_subject.get(subject.subject_id, [])
         sensor = EduPageSubjectSensor(
             coordinator,

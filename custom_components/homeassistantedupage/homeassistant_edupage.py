@@ -29,15 +29,15 @@ class Edupage:
             _LOGGER.debug(f"EDUPAGE Login successful, result: {result}")
             return result
         except BadCredentialsException as e:
-            _LOGGER.error("INIT login failed: bad credentials. %s", e)
+            _LOGGER.error("EDUPAGE login failed: bad credentials. %s", e)
             return False
 
         except CaptchaException as e:
-            _LOGGER.error("INIT login failed: CAPTCHA needed. %s", e)
+            _LOGGER.error("EDUPAGE login failed: CAPTCHA needed. %s", e)
             return False  
 
         except Exception as e:
-            _LOGGER.error("INIT unexpected login error: %s", e)
+            _LOGGER.error("EDUPAGE unexpected login error: %s", e)
             return False  
 
     async def get_classes(self):
@@ -100,12 +100,12 @@ class Edupage:
         try:
             timetable_data = await self.hass.async_add_executor_job(self.api.get_timetable, EduStudent, date)
             if timetable_data is None:
-                _LOGGER.info("EDUPAGE timetable is None")
+                _LOGGER.debug("EDUPAGE timetable is None")
             else:
-                #_LOGGER.debug(f"EDUPAGE timetable_data for {date}: {timetable_data}")
+                _LOGGER.debug(f"EDUPAGE timetable_data for {date}: {timetable_data}")
                 return timetable_data
         except Exception as e:
-            #_LOGGER.error(f"EDUPAGE error updating get_timetable() data for {date}: {e}")
+            _LOGGER.error(f"EDUPAGE error updating get_timetable() data for {date}: {e}")
             raise UpdateFailed(f"EDUPAGE error updating get_timetable() data for {date}: {e}")
 
     async def async_update(self):

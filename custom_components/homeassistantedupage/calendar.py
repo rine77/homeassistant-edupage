@@ -11,11 +11,11 @@ from collections import defaultdict
 from zoneinfo import ZoneInfo
 
 _LOGGER = logging.getLogger("custom_components.homeassistant_edupage")
-_LOGGER.info("CALENDAR Edupage calendar.py is being loaded")
+_LOGGER.debug("CALENDAR Edupage calendar.py is being loaded")
 
 async def async_setup_entry(hass, entry, async_add_entities: AddEntitiesCallback) -> None:
     """Set up Edupage calendar entities."""
-    _LOGGER.info("CALENDAR called async_setup_entry")
+    _LOGGER.debug("CALENDAR called async_setup_entry")
 
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
@@ -23,12 +23,12 @@ async def async_setup_entry(hass, entry, async_add_entities: AddEntitiesCallback
 
     async_add_entities([edupage_calendar])
 
-    _LOGGER.info("CALENDAR async_setup_entry finished.")
+    _LOGGER.debug("CALENDAR async_setup_entry finished.")
 
 async def async_added_to_hass(self) -> None:
     """When entity is added to hass."""
     await super().async_added_to_hass()
-    _LOGGER.info("CALENDAR added to hass")
+    _LOGGER.debug("CALENDAR added to hass")
 
     if self.coordinator:
         self.async_on_remove(
@@ -42,11 +42,10 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
 
     def __init__(self, coordinator, data):
         super().__init__(coordinator)
-        self._data = data  # Optional, falls du die Daten direkt verwenden möchtest.
+        self._data = data 
         self._events = []
-        self._attr_name = "Edupage Calendar"  # Klare und lesbare Benennung.
-        _LOGGER.info(f"CALENDAR Initialized EdupageCalendar with data: {data}")
-
+        self._attr_name = "Edupage Calendar"
+        _LOGGER.debug(f"CALENDAR Initialized EdupageCalendar with data: {data}")
 
     @property
     def unique_id(self):
@@ -100,25 +99,21 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
             _LOGGER.warning("CALENDAR Timetable data is missing.")
             return events
 
-        # Iteriere über die Tage und Lektionen im Stundenplan
         current_date = start_date.date()
         while current_date <= end_date.date():
             day_timetable = timetable.get(current_date)
             if day_timetable:
                 for lesson in day_timetable:
-                    # Debug die Attribute des Lesson-Objekts
+
                     _LOGGER.debug(f"CALENDAR Lesson attributes: {vars(lesson)}")
 
-                    # Rauminformationen aus der Klasse extrahieren
                     room = "Unknown"
                     if lesson.classes and lesson.classes[0].homeroom:
                         room = lesson.classes[0].homeroom.name
 
-                    # Lehrerinformationen extrahieren
                     teacher_names = [teacher.name for teacher in lesson.teachers]
                     teachers = ", ".join(teacher_names) if teacher_names else "Unknown Teacher"
 
-                    # Kombiniere Datum und Zeit zu einem vollständigen datetime-Objekt
                     start_time = datetime.combine(current_date, lesson.start_time).astimezone(local_tz)
                     end_time = datetime.combine(current_date, lesson.end_time).astimezone(local_tz)
                     events.append(
@@ -131,5 +126,5 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
                     )
             current_date += timedelta(days=1)
 
-        _LOGGER.info(f"CALENDAR Fetched {len(events)} events from {start_date} to {end_date}")
+        _LOGGER.debug(f"CALENDAR Fetched {len(events)} events from {start_date} to {end_date}")
         return events
