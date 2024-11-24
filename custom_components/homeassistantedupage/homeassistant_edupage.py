@@ -1,7 +1,19 @@
 import logging
+import asyncio
+
 from edupage_api import Edupage as APIEdupage
+from edupage_api.classes import Class
+from edupage_api.people import EduTeacher
+from edupage_api.people import Gender
+from edupage_api.classrooms import Classroom
+from zoneinfo import ZoneInfo
+from edupage_api.exceptions import BadCredentialsException, CaptchaException
+
+
 from datetime import datetime
+from datetime import date
 from homeassistant.helpers.update_coordinator import UpdateFailed
+from concurrent.futures import ThreadPoolExecutor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -10,9 +22,23 @@ class Edupage:
         self.hass = hass
         self.api = APIEdupage()
 
-    def login(self, username, password, subdomain):
+    async def login(self, username: str, password: str, subdomain: str):
+        """Perform login asynchronously."""
+        try:
+            result = await asyncio.to_thread(self.api.login, username, password, subdomain)
+            _LOGGER.debug(f"EDUPAGE Login successful, result: {result}")
+            return result
+        except BadCredentialsException as e:
+            _LOGGER.error("EDUPAGE login failed: bad credentials. %s", e)
+            return False
 
-        return self.api.login(username, password, subdomain)
+        except CaptchaException as e:
+            _LOGGER.error("EDUPAGE login failed: CAPTCHA needed. %s", e)
+            return False  
+
+        except Exception as e:
+            _LOGGER.error("EDUPAGE unexpected login error: %s", e)
+            return False  
 
     async def get_classes(self):
 
@@ -53,6 +79,34 @@ class Edupage:
             return user_id_data
         except Exception as e:
             raise UpdateFailed(F"EDUPAGE error updating get_user_id() data from API: {e}")
+
+    async def get_classrooms(self):
+
+        try:
+            all_classrooms = await self.hass.async_add_executor_job(self.api.get_classrooms)
+            return all_classrooms
+        except Exception as e:
+            raise UpdateFailed(F"EDUPAGE error updating get_classrooms data from API: {e}")
+    
+    async def get_teachers(self):
+
+        try:
+            all_teachers = await self.hass.async_add_executor_job(self.api.get_teachers)
+            return all_teachers
+        except Exception as e:
+            raise UpdateFailed(F"EDUPAGE error updating get_teachers data from API: {e}")
+
+    async def get_timetable(self, EduStudent, date):
+        try:
+            timetable_data = await self.hass.async_add_executor_job(self.api.get_timetable, EduStudent, date)
+            if timetable_data is None:
+                _LOGGER.debug("EDUPAGE timetable is None")
+            else:
+                _LOGGER.debug(f"EDUPAGE timetable_data for {date}: {timetable_data}")
+                return timetable_data
+        except Exception as e:
+            _LOGGER.error(f"EDUPAGE error updating get_timetable() data for {date}: {e}")
+            raise UpdateFailed(f"EDUPAGE error updating get_timetable() data for {date}: {e}")
 
     async def async_update(self):
 

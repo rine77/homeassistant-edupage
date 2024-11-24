@@ -9,32 +9,31 @@ from collections import defaultdict
 
 _LOGGER = logging.getLogger("custom_components.homeassistant_edupage")
 
-
 def group_grades_by_subject(grades):
-    """Group grades based on subject_id."""
+    """grouping grades based on subject_id."""
     grouped = defaultdict(list)
     for grade in grades:
         grouped[grade.subject_id].append(grade)
     return grouped
 
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
-    """Set up EduPage sensors based on subjects and their grades."""
-    _LOGGER.info("SENSOR called async_setup_entry")
+    """Set up EduPage sensors for each student and their grades."""
+    _LOGGER.debug("SENSOR called async_setup_entry")
 
     coordinator = hass.data[DOMAIN][entry.entry_id]
+    student = coordinator.data.get("student", {})
     subjects = coordinator.data.get("subjects", [])
     grades = coordinator.data.get("grades", [])
 
-    # Group grades based on subject_id
     grades_by_subject = group_grades_by_subject(grades)
 
     sensors = []
     for subject in subjects:
-        # Get grades per subject based on subject_id
         subject_grades = grades_by_subject.get(subject.subject_id, [])
         sensor = EduPageSubjectSensor(
             coordinator,
+            student.get("id"),
+            student.get("name"),
             subject.name,
             subject_grades
         )
@@ -44,19 +43,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 
 class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
-    """Subject sensor entity."""
+    """Subject sensor entity for a specific student."""
 
-    def __init__(self, coordinator, subject_name, grades=None):
+    def __init__(self, coordinator, student_id, student_name, subject_name, grades=None):
         """Initialize the sensor."""
         super().__init__(coordinator)
+        self._student_id = student_id
+        self._student_name = student_name
         self._subject_name = subject_name
-        self._grades = grades or []
-        self._attr_name = f"EduPage subject - {subject_name}"
-        self._attr_unique_id = f"edupage_grades_{subject_name.lower().replace(' ', '_')}"
+        self._grades = grades or [] 
+        self._attr_name = f"{student_name} - {subject_name}"
+        self._attr_unique_id = f"edupage_grades_{student_id}_{subject_name.lower().replace(' ', '_')}"
 
     @property
     def state(self):
-        """Return grade count."""
+        """Return the grade count."""
         return len(self._grades)
 
     @property
@@ -65,17 +66,12 @@ class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
         if not self._grades:
             return {"info": "no grades yet"}
 
-        attributes = {}
+        attributes = {"student": self._student_name}
         for i, grade in enumerate(self._grades):
             attributes[f"grade_{i+1}_title"] = grade.title
             attributes[f"grade_{i+1}_grade_n"] = grade.grade_n
             attributes[f"grade_{i+1}_date"] = grade.date.strftime("%Y-%m-%d %H:%M:%S")
-
-            # Check if teacher exists before accessing name
-            if grade.teacher:
-                attributes[f"grade_{i+1}_teacher"] = grade.teacher.name
-            else:
-                attributes[f"grade_{i+1}_teacher"] = None  # Optional: Log warning
-                _LOGGER.warning(f"Teacher information missing for grade {i+1} in subject {self._subject_name}.")
-                
+            attributes[f"grade_{i+1}_teacher"] = grade.teacher.name
         return attributes
+
+
