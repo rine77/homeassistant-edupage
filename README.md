@@ -18,9 +18,8 @@ In this phase of development please remove integration after update and reinstal
 * look for "edupage" with the nice "E" icon
 * use "homeassistantedupage" integration
 * enter login, password und (ONLY!) subdomain (no .edupage.com or something)
-* you should see now a lot of sensors with the subjects of your school
-* grades are attributes if existing
-
-![screenshot of sensors](./img/edupage_subjects_grades.jpg)
-
-![screenshot of sensor with attributes](./img/edupage_subjects_grades_attribues.jpg)
+* now you have to choose the student you want to bind sensors and calendar on
+* there will be a lot of sensors, each for the subject of your school
+* those subjects with grades have grades as attributes
+* furthermore there will be a calendar per student with timetable
+* fetched data for timetable is 14 days ahead
