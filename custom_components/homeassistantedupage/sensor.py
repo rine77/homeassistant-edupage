@@ -41,7 +41,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
     async_add_entities(sensors, True)
 
-
 class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
     """Subject sensor entity for a specific student."""
 
@@ -71,7 +70,8 @@ class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
             attributes[f"grade_{i+1}_title"] = grade.title
             attributes[f"grade_{i+1}_grade_n"] = grade.grade_n
             attributes[f"grade_{i+1}_date"] = grade.date.strftime("%Y-%m-%d %H:%M:%S")
-            attributes[f"grade_{i+1}_teacher"] = grade.teacher.name
+
+            teacher_name = grade.teacher.name if grade.teacher else "unknown"
+            attributes[f"grade_{i+1}_teacher"] = teacher_name
+
         return attributes
-
-
