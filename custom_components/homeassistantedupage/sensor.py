@@ -1,4 +1,5 @@
 import logging
+import re
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -47,12 +48,25 @@ class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, student_id, student_name, subject_name, grades=None):
         """Initialize the sensor."""
         super().__init__(coordinator)
-        self._student_id = student_id
-        self._student_name = student_name
-        self._subject_name = subject_name
-        self._grades = grades or [] 
-        self._attr_name = f"{student_name} - {subject_name}"
-        self._attr_unique_id = f"edupage_grades_{student_id}_{subject_name.lower().replace(' ', '_')}"
+
+        clean_student_id = re.sub(r'[^a-z0-9]', '_', str(student_id).lower())
+        clean_student_name = re.sub(r'[^a-z0-9]', '_', student_name.lower())
+        clean_subject_name = re.sub(r'[^a-z0-9]', '_', subject_name.lower())
+
+        self._student_id = clean_student_id
+        self._student_name = clean_student_name
+        self._subject_name = clean_subject_name
+        self._grades = grades or []
+
+        self._attr_name = f"{clean_student_name} - {clean_subject_name}"
+        self._unique_id = f"edupage_grades_{clean_student_id}_{clean_subject_name}"
+
+        _LOGGER.info("SENSOR unique_id %s", self._unique_id)
+
+    @property
+    def unique_id(self):
+        """Return a unique identifier for this sensor."""
+        return self._unique_id
 
     @property
     def state(self):
@@ -66,6 +80,7 @@ class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
             return {"info": "no grades yet"}
 
         attributes = {"student": self._student_name}
+        attributes = {"unique_id": self._unique_id}
         for i, grade in enumerate(self._grades):
             attributes[f"grade_{i+1}_title"] = grade.title
             attributes[f"grade_{i+1}_grade_n"] = grade.grade_n
