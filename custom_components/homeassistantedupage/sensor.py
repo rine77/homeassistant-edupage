@@ -59,7 +59,7 @@ class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
         self._grades = grades or []
 
         self._attr_name = f"{clean_student_name} - {clean_subject_name}"
-        self._unique_id = f"edupage_grades_{clean_student_id}_{clean_subject_name}"
+        self._unique_id = f"edupage_subject_{clean_student_id}_{clean_subject_name}"
 
         _LOGGER.info("SENSOR unique_id %s", self._unique_id)
 
