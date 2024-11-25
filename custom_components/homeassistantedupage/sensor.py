@@ -1,5 +1,6 @@
 import logging
 import re
+from unidecode import unidecode
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -49,17 +50,15 @@ class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
 
-        clean_student_id = re.sub(r'[^a-z0-9]', '_', str(student_id).lower())
-        clean_student_name = re.sub(r'[^a-z0-9]', '_', student_name.lower())
-        clean_subject_name = re.sub(r'[^a-z0-9]', '_', subject_name.lower())
-
-        self._student_id = clean_student_id
-        self._student_name = clean_student_name
-        self._subject_name = clean_subject_name
+        self._student_id = student_id
+        self._student_name = unidecode(student_name).replace(' ', '_').lower()
+        self._subject_name = unidecode(subject_name).replace(' ', '_').lower()
         self._grades = grades or []
 
         self._attr_name = f"{student_name} - {subject_name}"
-        self._unique_id = f"edupage_subject_{clean_student_id}_{clean_subject_name}"
+        self._name = self._attr_name
+
+        self._unique_id = f"edupage_subject_{self._student_id}_{self._student_name}_{self._subject_name}"
 
         _LOGGER.info("SENSOR unique_id %s", self._unique_id)
 
