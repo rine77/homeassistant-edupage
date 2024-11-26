@@ -6,7 +6,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "homeassistant",  // Führt `python -m homeassistant` aus
-      "args": ["--config", "/home/rine/Projekte/homeassistant/core/config"],
+      "args": ["--config", "/home/rine/Projekte/homeassistant/core/config", "--debug"],
       "console": "integratedTerminal",
       "justMyCode": false
     }
