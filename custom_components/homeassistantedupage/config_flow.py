@@ -1,6 +1,7 @@
 import logging
 import voluptuous as vol
 from edupage_api import Edupage
+from edupage_api.exceptions import BadCredentialsException, SecondFactorFailedException
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
@@ -14,6 +15,37 @@ class EdupageConfigFlow(config_entries.ConfigFlow, domain="homeassistantedupage"
 
     VERSION = 1
 
+    def login(self, api, user_input):
+        try:
+            second_factor = api.login(user_input[CONF_USERNAME], user_input[CONF_PASSWORD], user_input[CONF_SUBDOMAIN])
+            # TODO: add user select as dropdown?! for 2FA 
+            confirmation_method = "1"
+
+            if confirmation_method == "1":
+                while not second_factor.is_confirmed():
+                    time.sleep(0.5)
+                second_factor.finish()
+
+            elif confirmation_method == "2":
+                # TODO: how to do this in HA?!
+                code = input("Enter 2FA code (or 'resend' to resend the code): ")
+                while code.lower() == "resend":
+                    second_factor.resend_notifications()
+                    code = input("Enter 2FA code (or 'resend' to resend the code): ")
+                second_factor.finish_with_code(code)
+
+        except BadCredentialsException as e:
+            _LOGGER.error("Wrong username or password: %s", e)
+        except SecondFactorFailedException as e:
+            _LOGGER.error("Second factor failed: %s", e)
+
+        #TODO: what does HA expect here as return?!
+        if api.is_logged_in:
+            print("Logged in")
+            _LOGGER.info("Successfully logged in.")
+        else:
+            raise BadCredentialsException("Wrong username or password")
+
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
         errors = {}
@@ -26,10 +58,9 @@ class EdupageConfigFlow(config_entries.ConfigFlow, domain="homeassistantedupage"
                 # Login ausführen
                 _LOGGER.debug("Starting login process")
                 await self.hass.async_add_executor_job(
-                    api.login, 
-                    user_input[CONF_USERNAME],
-                    user_input[CONF_PASSWORD],
-                    user_input[CONF_SUBDOMAIN]
+                    self.login, 
+                    api,
+                    user_input
                 )
                 _LOGGER.debug("Login successful")
 
