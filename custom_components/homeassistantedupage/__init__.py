@@ -32,9 +32,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = None
 
     try:        
-        await hass.async_add_executor_job(
-           edupage.login, username, password, subdomain
-        )
+        await edupage.login(username, password, subdomain)
         _LOGGER.debug("INIT login_success")
 
     except BadCredentialsException as e:

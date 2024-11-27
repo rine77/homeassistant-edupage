@@ -18,12 +18,14 @@ class Edupage:
         try:
             result = True
             login = Login(self.api)
-            await asyncio.to_thread(
+            await self.hass.async_add_executor_job(
                 login.reload_data, subdomain, self.sessionid, username
             )
             if not self.api.is_logged_in:
                 #TODO: how to handle 2FA at this point?!
-                result = await asyncio.to_thread(self.api.login, username, password, subdomain)
+                result = await self.hass.async_add_executor_job(
+                    self.api.login, username, password, subdomain
+                )
             _LOGGER.debug(f"EDUPAGE Login successful, result: {result}")
             return result
         except BadCredentialsException as e:
