@@ -17,22 +17,23 @@ class EdupageConfigFlow(config_entries.ConfigFlow, domain="homeassistantedupage"
     def login(self, api, user_input):
         try:
             second_factor = api.login(user_input[CONF_USERNAME], user_input[CONF_PASSWORD], user_input[CONF_SUBDOMAIN])
-            # TODO: add user select as dropdown?! for 2FA 
-            confirmation_method = "1"
+            if second_factor is not None:
+                # TODO: add user select as dropdown?! for 2FA
+                confirmation_method = "1"
 
-            if confirmation_method == "1":
-                #TODO: waiting does not work, maybe cause of async?! SecondFactorFailedException is raised if no breakpoint debug is set
-                while not second_factor.is_confirmed():
-                    time.sleep(0.5)
-                second_factor.finish()
+                if confirmation_method == "1":
+                    #TODO: waiting does not work, maybe cause of async?! SecondFactorFailedException is raised if no breakpoint debug is set
+                    while not second_factor.is_confirmed():
+                        time.sleep(0.5)
+                    second_factor.finish()
 
-            elif confirmation_method == "2":
-                # TODO: how to do this in HA?!
-                code = input("Enter 2FA code (or 'resend' to resend the code): ")
-                while code.lower() == "resend":
-                    second_factor.resend_notifications()
+                elif confirmation_method == "2":
+                    # TODO: how to do this in HA?!
                     code = input("Enter 2FA code (or 'resend' to resend the code): ")
-                second_factor.finish_with_code(code)
+                    while code.lower() == "resend":
+                        second_factor.resend_notifications()
+                        code = input("Enter 2FA code (or 'resend' to resend the code): ")
+                    second_factor.finish_with_code(code)
 
         except BadCredentialsException as e:
             _LOGGER.error("Wrong username or password: %s", e)
