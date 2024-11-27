@@ -22,10 +22,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     _LOGGER.debug("INIT called async_setup")
     return True
 
-def login_wrapper(edupage: Edupage, username: str, password: str, subdomain: str):
-    #TODO hier ist noch was unsauber bzgl async und await
-    edupage.login(username=username, password=password, subdomain=subdomain)
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """initializin EduPage-integration and validate API-login"""
     _LOGGER.debug("INIT called async_setup_entry")
@@ -42,7 +38,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     try:        
         login_success = await hass.async_add_executor_job(
-           login_wrapper, edupage, username, password, subdomain
+           edupage.login, username, password, subdomain
         )
         _LOGGER.debug("INIT login_success")
 
