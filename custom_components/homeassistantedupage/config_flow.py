@@ -1,5 +1,6 @@
 import logging
 import voluptuous as vol
+import time
 from edupage_api import Edupage
 from edupage_api.exceptions import BadCredentialsException, SecondFactorFailedException
 from homeassistant import config_entries
