@@ -111,7 +111,8 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
                     if lesson.classes and lesson.classes[0].homeroom:
                         room = lesson.classes[0].homeroom.name
 
-                    teacher_names = [teacher.name for teacher in lesson.teachers]
+                    teacher_names = [teacher.name for teacher in lesson.teachers] if lesson.teachers else []
+
                     teachers = ", ".join(teacher_names) if teacher_names else "Unknown Teacher"
 
                     start_time = datetime.combine(current_date, lesson.start_time).astimezone(local_tz)
