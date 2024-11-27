@@ -4,7 +4,6 @@ import time
 from edupage_api import Edupage
 from edupage_api.exceptions import BadCredentialsException, SecondFactorFailedException
 from homeassistant import config_entries
-from homeassistant.core import callback
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from.const import CONF_PHPSESSID, CONF_SUBDOMAIN, CONF_STUDENT_ID, CONF_STUDENT_NAME
 
@@ -73,7 +72,6 @@ class EdupageConfigFlow(config_entries.ConfigFlow, domain="homeassistantedupage"
                     errors["base"] = "no_students_found"
                 else:
                     # Speichere Benutzer-Eingaben
-                    #bla = api.session.cookies["PHPSESSID"]
                     cookies = api.session.cookies.get_dict()
                     phpsess = cookies["PHPSESSID"]
                     user_input[CONF_PHPSESSID] = phpsess

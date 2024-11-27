@@ -2,18 +2,8 @@ import logging
 import asyncio
 from edupage_api import Login
 from edupage_api import Edupage as APIEdupage
-from edupage_api.classes import Class
-from edupage_api.people import EduTeacher
-from edupage_api.people import Gender
-from edupage_api.classrooms import Classroom
-from zoneinfo import ZoneInfo
 from edupage_api.exceptions import BadCredentialsException, CaptchaException, SecondFactorFailedException
-
-
-from datetime import datetime
-from datetime import date
 from homeassistant.helpers.update_coordinator import UpdateFailed
-from concurrent.futures import ThreadPoolExecutor
 
 _LOGGER = logging.getLogger(__name__)
 

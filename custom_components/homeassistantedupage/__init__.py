@@ -1,17 +1,12 @@
 import logging
 import asyncio
 from datetime import datetime, timedelta
-from edupage_api import Edupage as EdupageApi
 from edupage_api.exceptions import BadCredentialsException, CaptchaException, SecondFactorFailedException
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.const import Platform
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from .homeassistant_edupage import Edupage
-from edupage_api.classes import Class
-from edupage_api.people import EduTeacher
-from edupage_api.people import Gender
-from edupage_api.classrooms import Classroom
+
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from .const import DOMAIN, CONF_PHPSESSID, CONF_SUBDOMAIN, CONF_STUDENT_ID, CONF_STUDENT_NAME
 
@@ -37,7 +32,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = None
 
     try:        
-        login_success = await hass.async_add_executor_job(
+        await hass.async_add_executor_job(
            edupage.login, username, password, subdomain
         )
         _LOGGER.debug("INIT login_success")
