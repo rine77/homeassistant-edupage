@@ -5,10 +5,9 @@ from edupage_api.exceptions import BadCredentialsException, SecondFactorFailedEx
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from.const import CONF_PHPSESSID, CONF_SUBDOMAIN, CONF_STUDENT_ID, CONF_STUDENT_NAME
 
 _LOGGER = logging.getLogger(__name__)
-
-CONF_SUBDOMAIN = "subdomain"  # Lokal definiert
 
 class EdupageConfigFlow(config_entries.ConfigFlow, domain="homeassistantedupage"):
     """Handle a config flow for Edupage."""
@@ -22,6 +21,7 @@ class EdupageConfigFlow(config_entries.ConfigFlow, domain="homeassistantedupage"
             confirmation_method = "1"
 
             if confirmation_method == "1":
+                #TODO: waiting does not work, maybe cause of async?! SecondFactorFailedException is raised if no breakpoint debug is set
                 while not second_factor.is_confirmed():
                     time.sleep(0.5)
                 second_factor.finish()
@@ -72,6 +72,10 @@ class EdupageConfigFlow(config_entries.ConfigFlow, domain="homeassistantedupage"
                     errors["base"] = "no_students_found"
                 else:
                     # Speichere Benutzer-Eingaben
+                    #bla = api.session.cookies["PHPSESSID"]
+                    cookies = api.session.cookies.get_dict()
+                    phpsess = cookies["PHPSESSID"]
+                    user_input[CONF_PHPSESSID] = phpsess
                     self.user_data = user_input
                     self.students = {student.person_id: student.name for student in students}
 
@@ -107,8 +111,8 @@ class EdupageConfigFlow(config_entries.ConfigFlow, domain="homeassistantedupage"
                 title=f"Edupage ({self.students[student_id]})",
                 data={
                     **self.user_data,  # Login-Daten hinzufügen
-                    "student_id": student_id,
-                    "student_name": self.students[student_id],
+                    CONF_STUDENT_ID: student_id,
+                    CONF_STUDENT_NAME: self.students[student_id],
                 },
             )
 

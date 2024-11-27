@@ -1,13 +1,13 @@
 import logging
 import asyncio
-
+from edupage_api import Login
 from edupage_api import Edupage as APIEdupage
 from edupage_api.classes import Class
 from edupage_api.people import EduTeacher
 from edupage_api.people import Gender
 from edupage_api.classrooms import Classroom
 from zoneinfo import ZoneInfo
-from edupage_api.exceptions import BadCredentialsException, CaptchaException
+from edupage_api.exceptions import BadCredentialsException, CaptchaException, SecondFactorFailedException
 
 
 from datetime import datetime
@@ -18,14 +18,22 @@ from concurrent.futures import ThreadPoolExecutor
 _LOGGER = logging.getLogger(__name__)
 
 class Edupage:
-    def __init__(self,hass):
+    def __init__(self,hass, sessionid = ''):
         self.hass = hass
+        self.sessionid = sessionid
         self.api = APIEdupage()
 
     async def login(self, username: str, password: str, subdomain: str):
         """Perform login asynchronously."""
         try:
-            result = await asyncio.to_thread(self.api.login, username, password, subdomain)
+            result = True
+            login = Login(self.api)
+            await asyncio.to_thread(
+                login.reload_data, subdomain, self.sessionid, username
+            )
+            if not self.api.is_logged_in:
+                #TODO: how to handle 2FA at this point?!
+                result = await asyncio.to_thread(self.api.login, username, password, subdomain)
             _LOGGER.debug(f"EDUPAGE Login successful, result: {result}")
             return result
         except BadCredentialsException as e:
@@ -34,6 +42,11 @@ class Edupage:
 
         except CaptchaException as e:
             _LOGGER.error("EDUPAGE login failed: CAPTCHA needed. %s", e)
+            return False 
+
+        except SecondFactorFailedException as e:
+            #TODO hier müsste man dann irgendwie abfangen, falls die session mal abgelaufen ist. und dies dann auch irgendwie via HA sauber zum Nutzer bringen!?
+            _LOGGER.error("EDUPAGE login failed: 2FA error. %s", e)
             return False  
 
         except Exception as e:

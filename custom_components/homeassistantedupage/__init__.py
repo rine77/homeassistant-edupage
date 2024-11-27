@@ -1,7 +1,8 @@
 import logging
 import asyncio
 from datetime import datetime, timedelta
-from edupage_api.exceptions import BadCredentialsException, CaptchaException
+from edupage_api import Edupage as EdupageApi
+from edupage_api.exceptions import BadCredentialsException, CaptchaException, SecondFactorFailedException
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.const import Platform
@@ -11,7 +12,8 @@ from edupage_api.classes import Class
 from edupage_api.people import EduTeacher
 from edupage_api.people import Gender
 from edupage_api.classrooms import Classroom
-from .const import DOMAIN
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from .const import DOMAIN, CONF_PHPSESSID, CONF_SUBDOMAIN, CONF_STUDENT_ID, CONF_STUDENT_NAME
 
 _LOGGER = logging.getLogger("custom_components.homeassistant_edupage")
 
@@ -20,22 +22,27 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     _LOGGER.debug("INIT called async_setup")
     return True
 
+def login_wrapper(edupage: Edupage, username: str, password: str, subdomain: str):
+    #TODO hier ist noch was unsauber bzgl async und await
+    edupage.login(username=username, password=password, subdomain=subdomain)
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """initializin EduPage-integration and validate API-login"""
     _LOGGER.debug("INIT called async_setup_entry")
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {} 
 
-    username = entry.data["username"]
-    password = entry.data["password"]
-    subdomain = entry.data["subdomain"]
-    student_id = entry.data["student_id"]
-    edupage = Edupage(hass)
+    username = entry.data[CONF_USERNAME]
+    password = entry.data[CONF_PASSWORD]
+    subdomain = entry.data[CONF_SUBDOMAIN]
+    PHPSESSID = entry.data[CONF_PHPSESSID]
+    student_id = entry.data[CONF_STUDENT_ID]
+    edupage = Edupage(hass=hass, sessionid=PHPSESSID)
     coordinator = None
 
-    try:
+    try:        
         login_success = await hass.async_add_executor_job(
-            edupage.login, username, password, subdomain
+           login_wrapper, edupage, username, password, subdomain
         )
         _LOGGER.debug("INIT login_success")
 
@@ -48,7 +55,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False  
 
     except Exception as e:
-        _LOGGER.error("INIT unexpected login error: %s", e)
+        _LOGGER.error("INIT unexpected login error: %s", e.with_traceback(None))
         return False  
 
     fetch_lock = asyncio.Lock() 
