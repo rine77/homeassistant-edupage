@@ -1,14 +1,13 @@
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, date
+from typing import Optional
+
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
-from homeassistant.helpers.update_coordinator import UpdateFailed
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN
-from collections import defaultdict
 from zoneinfo import ZoneInfo
+from edupage_api.timetables import Lesson
 
 _LOGGER = logging.getLogger("custom_components.homeassistant_edupage")
 _LOGGER.debug("CALENDAR Edupage calendar.py is being loaded")
@@ -76,18 +75,10 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
     @property
     def event(self):
         """Return the next upcoming event or None if no event exists."""
-        local_tz = ZoneInfo(self.hass.config.time_zone)
-        now = datetime.now(local_tz)
-        return CalendarEvent(
-            start=now + timedelta(hours=1),
-            end=now + timedelta(hours=2),
-            summary="Next Dummy Event",
-            description="A placeholder event for debugging."
-        )
+        return self.find_lesson_now_or_next_across_days()
 
     async def async_get_events(self, hass, start_date: datetime, end_date: datetime):
         """Return events in a specific date range."""
-        local_tz = ZoneInfo(self.hass.config.time_zone)
         events = []
 
         _LOGGER.debug(f"CALENDAR Fetching events between {start_date} and {end_date}")
@@ -107,26 +98,64 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
 
                     _LOGGER.debug(f"CALENDAR Lesson attributes: {vars(lesson)}")
 
-                    room = "Unknown"
-                    
-                    if lesson.classrooms:
-                        room = lesson.classrooms[0].name
-
-                    teacher_names = [teacher.name for teacher in lesson.teachers] if lesson.teachers else []
-
-                    teachers = ", ".join(teacher_names) if teacher_names else "Unknown Teacher"
-
-                    start_time = datetime.combine(current_date, lesson.start_time).astimezone(local_tz)
-                    end_time = datetime.combine(current_date, lesson.end_time).astimezone(local_tz)
                     events.append(
-                        CalendarEvent(
-                            start=start_time,
-                            end=end_time,
-                            summary=lesson.subject.name if lesson.subject else "Unknown Subject",
-                            description=f"Room: {room}\nTeacher(s): {teachers}"
-                        )
+                        self.map_lesson_to_calender_event(lesson, current_date)
                     )
             current_date += timedelta(days=1)
 
         _LOGGER.debug(f"CALENDAR Fetched {len(events)} events from {start_date} to {end_date}")
         return events
+
+    def map_lesson_to_calender_event(self, lesson: Lesson, day: date) -> CalendarEvent:
+        room = "Unknown"
+        if lesson.classrooms:
+            room = lesson.classrooms[0].name
+
+        teacher_names = [teacher.name for teacher in lesson.teachers] if lesson.teachers else []
+
+        teachers = ", ".join(teacher_names) if teacher_names else "Unknown Teacher"
+        local_tz = ZoneInfo(self.hass.config.time_zone)
+        start_time = datetime.combine(day, lesson.start_time).astimezone(local_tz)
+        end_time = datetime.combine(day, lesson.end_time).astimezone(local_tz)
+        cal_event = CalendarEvent(
+            start=start_time,
+            end=end_time,
+            summary=lesson.subject.name if lesson.subject else "Unknown Subject",
+            description=f"Room: {room}\nTeacher(s): {teachers}",
+            location=room
+        )
+        return cal_event
+
+    # Funktion zum Filtern und Finden der nächsten passenden Lesson
+    def find_lesson_now_or_next_across_days(self) -> Optional[CalendarEvent]:
+        lessons_by_day = self.coordinator.data.get("timetable", {})
+        current_time = datetime.now().time()  # Aktuelle Uhrzeit
+        current_day = datetime.date(datetime.now())  # Aktueller Wochentag
+
+        # Schritt 1: Suche im aktuellen Tag
+        lessons_today = lessons_by_day.get(current_day, [])
+        current_lesson = next((lesson for lesson in lessons_today
+                               if lesson.start_time <= current_time <= lesson.end_time), None)
+
+        if current_lesson:
+            return self.map_lesson_to_calender_event(current_lesson, current_day)  # Falls eine aktuelle Lesson gefunden wird
+
+        # Schritt 2: Finde die nächste Lesson heute oder an zukünftigen Tagen
+        next_lesson = None
+        for day, lessons in sorted(lessons_by_day.items(), key=lambda x: x[0]):  # Nach Tagen sortieren
+            # Überspringe vergangene Tage
+            if day < current_day:
+                continue
+
+            # Prüfe Lektionen heute (nach current_time) oder in zukünftigen Tagen
+            future_lessons = [lesson for lesson in lessons if day > current_day or lesson.start_time > current_time]
+            if future_lessons:
+                # Die früheste Lesson finden
+                next_lesson_today_or_future = min(future_lessons, key=lambda x: x.start_time)
+                if next_lesson is None or next_lesson_today_or_future.start_time < next_lesson.start_time:
+                    next_lesson = next_lesson_today_or_future
+
+                if next_lesson:
+                    return self.map_lesson_to_calender_event(next_lesson, day)
+
+        return None
