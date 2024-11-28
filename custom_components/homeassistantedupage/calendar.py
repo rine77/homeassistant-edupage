@@ -108,8 +108,9 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
                     _LOGGER.debug(f"CALENDAR Lesson attributes: {vars(lesson)}")
 
                     room = "Unknown"
-                    if lesson.classes and lesson.classes[0].homeroom:
-                        room = lesson.classes[0].homeroom.name
+                    
+                    if lesson.classrooms:
+                        room = lesson.classrooms[0].name
 
                     teacher_names = [teacher.name for teacher in lesson.teachers] if lesson.teachers else []
 
