@@ -21,15 +21,16 @@ def group_grades_by_subject(grades):
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     """Set up EduPage sensors for each student and their grades."""
     _LOGGER.debug("SENSOR called async_setup_entry")
-
     coordinator = hass.data[DOMAIN][entry.entry_id]
+    
     student = coordinator.data.get("student", {})
     subjects = coordinator.data.get("subjects", [])
     grades = coordinator.data.get("grades", [])
-
+    notifications = coordinator.data.get("notifications", [])
     grades_by_subject = group_grades_by_subject(grades)
 
     sensors = []
+
     for subject in subjects:
         subject_grades = grades_by_subject.get(subject.subject_id, [])
         sensor = EduPageSubjectSensor(
@@ -40,6 +41,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             subject_grades
         )
         sensors.append(sensor)
+
+    notify = EduPageNotificationSensor(
+        coordinator,
+        student.get("id"),
+        student.get("name"),
+        notifications
+    )
+
+    sensors.append(notify)
 
     async_add_entities(sensors, True)
 
@@ -89,3 +99,51 @@ class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
             attributes[f"grade_{i+1}_teacher"] = teacher_name
 
         return attributes
+
+class EduPageNotificationSensor(CoordinatorEntity, SensorEntity):
+    """Subject sensor entity for a specific student."""
+
+    def __init__(self, coordinator, student_id, student_name, notifications):
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+
+        self._notifications = notifications
+        self._student_id = student_id
+        self._student_name = unidecode(student_name).replace(' ', '_').lower()
+
+        self._attr_name = f"Notification {student_name}"
+        self._name = self._attr_name
+
+        self._unique_id = f"edupage_notification_{self._student_id}_{self._student_name}"
+
+        _LOGGER.info("SENSOR unique_id %s", self._unique_id)
+
+    @property
+    def unique_id(self):
+        """Return a unique identifier for this sensor."""
+        return self._unique_id
+
+    @property
+    def state(self):
+        """Return state."""
+        return len(self._notifications)
+
+    @property
+    def extra_state_attributes(self):
+        """Return additional attributes."""
+
+        attributes = {"student": self._student_name}
+        attributes = {"unique_id": self._unique_id}
+
+        for i, event in enumerate(self._notifications):
+            if event.event_type == EventType.HOMEWORK:
+                attributes[f"event_{i+1}_id"] = event.event_id
+                attributes[f"event_{i+1}_text"] = event.text
+                attributes[f"event_{i+1}_timestamp"] = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                author_name = event.author if event.author else "no author"
+                attributes[f"event_{i+1}_author"] = author_name
+
+        return attributes
+
+class EventType:
+    HOMEWORK = 'homework'

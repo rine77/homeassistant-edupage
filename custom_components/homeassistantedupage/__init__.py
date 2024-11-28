@@ -69,6 +69,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
                 grades = await edupage.get_grades()
                 subjects = await edupage.get_subjects()
+                notifications = await edupage.get_notifications()
 
                 timetable_data = {}
                 today = datetime.now().date()
@@ -86,6 +87,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     "grades": grades,
                     "subjects": subjects,
                     "timetable": timetable_data,
+                    "notifications": notifications,
                 }
                 _LOGGER.debug(f"INIT Coordinator fetch_data returning: {return_data}")
                 return return_data
