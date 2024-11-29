@@ -10,7 +10,7 @@
           "password": "Password",
           "username": "Username"
         },
-        "description": "Login using your username and password.\nMake sure to only use the subdomain of the edupage URL.\n\nIf you have 2FA enabled, confirm it on your device.\n\n",
+        "description": "Login using your username and password.\nMake sure to only use the subdomain of the edupage URL.\n\nIf you have 2FA enabled, confirm it on your device.",
         "title": "Login to your edupage account"
       }
     },

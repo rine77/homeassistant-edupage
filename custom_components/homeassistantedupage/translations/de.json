@@ -10,7 +10,7 @@
           "password": "Passwort",
           "username": "Username"
         },
-        "description": "Login mit Username und Passwort.\nAchten Sie daruf nur die subdomain der edupage URL zu benutzen.\n\nSollten Sie 2FA aktiviert haben, bestätigten sie dies auf Ihrem Endgerät.\n\n",
+        "description": "Login mit Username und Passwort.\nAchten Sie daruf nur die subdomain der edupage URL zu benutzen.\n\nSollten Sie 2FA aktiviert haben, bestätigten sie dies auf Ihrem Endgerät.",
         "title": "edupage account login"
       }
     },
