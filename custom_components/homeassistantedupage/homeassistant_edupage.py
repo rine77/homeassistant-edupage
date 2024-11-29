@@ -69,6 +69,15 @@ class Edupage:
         except Exception as e:
             raise UpdateFailed(F"EDUPAGE error updating get_subjects() data from API: {e}")
 
+    async def get_notifications(self):
+
+        try:
+            all_notifications = await self.hass.async_add_executor_job(self.api.get_notifications)
+            _LOGGER.info(f"EDUPAGE Notifications found %s", all_notifications)
+            return all_notifications
+        except Exception as e:
+            raise UpdateFailed(F"EDUPAGE error updating get_notifications() data from API: {e}")
+
     async def get_students(self):
 
         try:
