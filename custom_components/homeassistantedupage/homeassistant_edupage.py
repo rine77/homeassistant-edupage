@@ -73,7 +73,7 @@ class Edupage:
 
         try:
             all_notifications = await self.hass.async_add_executor_job(self.api.get_notifications)
-            _LOGGER.info(f"EDUPAGE Notifications found %s", all_notifications)
+            _LOGGER.debug(f"EDUPAGE Notifications found %s", all_notifications)
             return all_notifications
         except Exception as e:
             raise UpdateFailed(F"EDUPAGE error updating get_notifications() data from API: {e}")

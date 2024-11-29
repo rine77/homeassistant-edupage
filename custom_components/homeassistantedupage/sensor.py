@@ -88,8 +88,13 @@ class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
         if not self._grades:
             return {"info": "no grades yet"}
 
-        attributes = {"student": self._student_name}
-        attributes = {"unique_id": self._unique_id}
+        attributes = {}
+
+        attributes = {
+            "student": self.coordinator.data.get("student", {}),
+            "unique_id": self._unique_id
+            }
+
         for i, grade in enumerate(self._grades):
             attributes[f"grade_{i+1}_title"] = grade.title
             attributes[f"grade_{i+1}_grade_n"] = grade.grade_n
@@ -132,8 +137,12 @@ class EduPageNotificationSensor(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self):
         """Return additional attributes."""
 
-        attributes = {"student": self._student_name}
-        attributes = {"unique_id": self._unique_id}
+        attributes = {}
+
+        attributes = {
+            "student": self.coordinator.data.get("student", {}),
+            "unique_id": self._unique_id
+            }
 
         for i, event in enumerate(self._notifications):
             if event.event_type == EventType.HOMEWORK:
