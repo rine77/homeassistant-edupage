@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from datetime import datetime, timedelta
-from edupage_api.exceptions import BadCredentialsException, CaptchaException, SecondFactorFailedException
+from edupage_api.exceptions import BadCredentialsException, CaptchaException
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -72,21 +72,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 notifications = await edupage.get_notifications()
 
                 timetable_data = {}
+                timetable_data_canceled = {}
                 today = datetime.now().date()
                 for offset in range(14):
                     current_date = today + timedelta(days=offset)
                     timetable = await edupage.get_timetable(student, current_date)
-                    if timetable:
-                        _LOGGER.debug(f"Timetable for {current_date}: {timetable}")
-                        timetable_data[current_date] = timetable
+                    lessons_to_add = []
+                    canceled_lessons = []
+                    for lesson in timetable:
+                        if not lesson.is_cancelled:
+                            lessons_to_add.append(lesson)
+                        else:
+                            canceled_lessons.append(lesson)
+                    if lessons_to_add:
+                        _LOGGER.debug(f"Timetable for {current_date}: {lessons_to_add}")
+                        timetable_data[current_date] = lessons_to_add
                     else:
                         _LOGGER.warning(f"INIT No timetable found for {current_date}")
+                    if canceled_lessons:
+                        timetable_data_canceled[current_date] = canceled_lessons
 
                 return_data = {
                     "student": {"id": student.person_id, "name": student.name},
                     "grades": grades,
                     "subjects": subjects,
                     "timetable": timetable_data,
+                    "cancelled_lessons": timetable_data_canceled,
                     "notifications": notifications,
                 }
                 _LOGGER.debug(f"INIT Coordinator fetch_data returning: {return_data}")
