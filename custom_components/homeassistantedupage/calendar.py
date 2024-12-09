@@ -83,6 +83,7 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
 
         _LOGGER.debug(f"CALENDAR Fetching events between {start_date} and {end_date}")
         timetable = self.coordinator.data.get("timetable", {})
+        timetable_canceled = self.coordinator.data.get("cancelled_lessons", {})
         _LOGGER.debug(f"CALENDAR Coordinator data: {self.coordinator.data}")
         _LOGGER.debug(f"CALENDAR Fetched timetable data: {timetable}")
 
@@ -92,19 +93,26 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
 
         current_date = start_date.date()
         while current_date <= end_date.date():
-            day_timetable = timetable.get(current_date)
-            if day_timetable:
-                for lesson in day_timetable:
-
-                    _LOGGER.debug(f"CALENDAR Lesson attributes: {vars(lesson)}")
-
-                    events.append(
-                        self.map_lesson_to_calender_event(lesson, current_date)
-                    )
+            events.extend(self.get_events(timetable, current_date))
+            events.extend(self.get_events(timetable_canceled, current_date))
             current_date += timedelta(days=1)
 
         _LOGGER.debug(f"CALENDAR Fetched {len(events)} events from {start_date} to {end_date}")
         return events
+
+    def get_events(self, timetable, current_date):
+        events = []
+        day_timetable = timetable.get(current_date)
+        if day_timetable:
+            for lesson in day_timetable:
+
+                _LOGGER.debug(f"CALENDAR Lesson attributes: {vars(lesson)}")
+
+                events.append(
+                    self.map_lesson_to_calender_event(lesson, current_date)
+                )
+        return events
+
 
     def map_lesson_to_calender_event(self, lesson: Lesson, day: date) -> CalendarEvent:
         room = "Unknown"
@@ -117,10 +125,12 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
         local_tz = ZoneInfo(self.hass.config.time_zone)
         start_time = datetime.combine(day, lesson.start_time).astimezone(local_tz)
         end_time = datetime.combine(day, lesson.end_time).astimezone(local_tz)
+        lesson_subject = lesson.subject.name if lesson.subject else "Unknown Subject"
+        lesson_subject_prefix = "[Canceled] " if lesson.is_cancelled else ""
         cal_event = CalendarEvent(
             start=start_time,
             end=end_time,
-            summary=lesson.subject.name if lesson.subject else "Unknown Subject",
+            summary= lesson_subject_prefix + lesson_subject,
             description=f"Room: {room}\nTeacher(s): {teachers}",
             location=room
         )
