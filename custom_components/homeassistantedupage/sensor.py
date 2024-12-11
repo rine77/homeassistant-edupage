@@ -65,7 +65,7 @@ class EduPageSubjectSensor(CoordinatorEntity, SensorEntity):
         self._subject_name = unidecode(subject_name).replace(' ', '_').lower()
         self._grades = grades or []
 
-        self._attr_name = f"{student_name} - {subject_name}"
+        self._attr_name = f"Edupage - {student_name} - {subject_name}"
         self._name = self._attr_name
 
         self._unique_id = f"edupage_subject_{self._student_id}_{self._student_name}_{self._subject_name}"
@@ -116,7 +116,7 @@ class EduPageNotificationSensor(CoordinatorEntity, SensorEntity):
         self._student_id = student_id
         self._student_name = unidecode(student_name).replace(' ', '_').lower()
 
-        self._attr_name = f"Notification {student_name}"
+        self._attr_name = f"Edupage - Notification {student_name}"
         self._name = self._attr_name
 
         self._unique_id = f"edupage_notification_{self._student_id}_{self._student_name}"
