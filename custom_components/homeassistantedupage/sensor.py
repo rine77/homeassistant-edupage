@@ -149,6 +149,7 @@ class EduPageNotificationSensor(CoordinatorEntity, SensorEntity):
                 attributes[f"event_{i+1}_id"] = event.event_id
                 attributes[f"event_{i+1}_text"] = event.text
                 attributes[f"event_{i+1}_timestamp"] = event.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                attributes[f"event_{i+1}_deadline"] = event.additional_data.get("date") if event.additional_data else None
                 author_name = event.author if event.author else "no author"
                 attributes[f"event_{i+1}_author"] = author_name
 
