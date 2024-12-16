@@ -34,14 +34,14 @@ async def async_added_to_hass(self) -> None:
             self.coordinator.async_add_listener(
                 self._handle_coordinator_update, None
             )
-        )    
+        )
 
 class EdupageCalendar(CoordinatorEntity, CalendarEntity):
     """Representation of an Edupage calendar entity."""
 
     def __init__(self, coordinator, data):
         super().__init__(coordinator)
-        self._data = data 
+        self._data = data
         self._events = []
         self._attr_name = "Edupage Calendar"
         _LOGGER.debug(f"CALENDAR Initialized EdupageCalendar with data: {data}")
@@ -57,7 +57,7 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
         """Return the name of the calendar."""
         student_name = self.coordinator.data.get("student", {}).get("name", "Unknown Student")
         return f"Edupage - {student_name}"
-        
+
     @property
     def extra_state_attributes(self):
         """Return the extra state attributes."""
@@ -115,23 +115,24 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
 
 
     def map_lesson_to_calender_event(self, lesson: Lesson, day: date) -> CalendarEvent:
-        room = "Unknown"
+        teacher_names = [teacher.name for teacher in lesson.teachers] if lesson.teachers else []
+        teachers = ", ".join(teacher_names) if teacher_names else "Unknown Teacher"
+        description=f"Teacher(s): {teachers}"
+        room = None
         if lesson.classrooms:
             room = lesson.classrooms[0].name
-
-        teacher_names = [teacher.name for teacher in lesson.teachers] if lesson.teachers else []
-
-        teachers = ", ".join(teacher_names) if teacher_names else "Unknown Teacher"
+            description += f"\nRoom: {room}"
         local_tz = ZoneInfo(self.hass.config.time_zone)
         start_time = datetime.combine(day, lesson.start_time).astimezone(local_tz)
         end_time = datetime.combine(day, lesson.end_time).astimezone(local_tz)
         lesson_subject = lesson.subject.name if lesson.subject else "Unknown Subject"
         lesson_subject_prefix = "[Canceled] " if lesson.is_cancelled else ""
+
         cal_event = CalendarEvent(
             start=start_time,
             end=end_time,
             summary= lesson_subject_prefix + lesson_subject,
-            description=f"Room: {room}\nTeacher(s): {teachers}",
+            description=description,
             location=room
         )
         return cal_event
