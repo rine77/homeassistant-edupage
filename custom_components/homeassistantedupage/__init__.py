@@ -8,7 +8,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from .homeassistant_edupage import Edupage
 
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
-from .const import DOMAIN, CONF_PHPSESSID, CONF_SUBDOMAIN, CONF_STUDENT_ID, CONF_STUDENT_NAME
+from .const import DOMAIN, CONF_PHPSESSID, CONF_SUBDOMAIN, CONF_STUDENT_ID
 
 _LOGGER = logging.getLogger("custom_components.homeassistant_edupage")
 
@@ -21,7 +21,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """initializin EduPage-integration and validate API-login"""
     _LOGGER.debug("INIT called async_setup_entry")
     if DOMAIN not in hass.data:
-        hass.data[DOMAIN] = {} 
+        hass.data[DOMAIN] = {}
 
     username = entry.data[CONF_USERNAME]
     password = entry.data[CONF_PASSWORD]
@@ -31,7 +31,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     edupage = Edupage(hass=hass, sessionid=PHPSESSID)
     coordinator = None
 
-    try:        
+    try:
         await edupage.login(username, password, subdomain)
         _LOGGER.debug("INIT login_success")
 
@@ -41,13 +41,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     except CaptchaException as e:
         _LOGGER.error("INIT login failed: CAPTCHA needed. %s", e)
-        return False  
+        return False
 
     except Exception as e:
         _LOGGER.error("INIT unexpected login error: %s", e.with_traceback(None))
-        return False  
+        return False
 
-    fetch_lock = asyncio.Lock() 
+    fetch_lock = asyncio.Lock()
 
     async def fetch_data():
         """Function to fetch timetable data for the selected student."""
@@ -79,11 +79,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     timetable = await edupage.get_timetable(student, current_date)
                     lessons_to_add = []
                     canceled_lessons = []
-                    for lesson in timetable:
-                        if not lesson.is_cancelled:
-                            lessons_to_add.append(lesson)
-                        else:
-                            canceled_lessons.append(lesson)
+                    if timetable is not None:
+                        for lesson in timetable:
+                            if not lesson.is_cancelled:
+                                lessons_to_add.append(lesson)
+                            else:
+                                canceled_lessons.append(lesson)
                     if lessons_to_add:
                         _LOGGER.debug(f"Timetable for {current_date}: {lessons_to_add}")
                         timetable_data[current_date] = lessons_to_add
@@ -130,13 +131,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await asyncio.sleep(1)
     await coordinator.async_config_entry_first_refresh()
-    _LOGGER.debug(f"INIT Coordinator first fetch!")
+    _LOGGER.debug("INIT Coordinator first fetch!")
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, ["calendar", "sensor"])
-    _LOGGER.debug(f"INIT forwarded")    
+    _LOGGER.debug("INIT forwarded")
     _LOGGER.debug(f"INIT Coordinator data: {coordinator.data}")
 
     return True
@@ -144,13 +145,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload ConfigEntry."""
     _LOGGER.debug("INIT called async_unload_entry")
-    
+
     unload_calendar = await hass.config_entries.async_forward_entry_unload(entry, "calendar")
     unload_sensor = await hass.config_entries.async_forward_entry_unload(entry, "sensor")
-    
+
     unload_ok = unload_calendar and unload_sensor
-    
+
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
-    
+
     return unload_ok
