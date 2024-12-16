@@ -115,23 +115,24 @@ class EdupageCalendar(CoordinatorEntity, CalendarEntity):
 
 
     def map_lesson_to_calender_event(self, lesson: Lesson, day: date) -> CalendarEvent:
+        teacher_names = [teacher.name for teacher in lesson.teachers] if lesson.teachers else []
+        teachers = ", ".join(teacher_names) if teacher_names else "Unknown Teacher"
+        description=f"Teacher(s): {teachers}"
         room = None
         if lesson.classrooms:
             room = lesson.classrooms[0].name
-
-        teacher_names = [teacher.name for teacher in lesson.teachers] if lesson.teachers else []
-
-        teachers = ", ".join(teacher_names) if teacher_names else "Unknown Teacher"
+            description += f"\nRoom: {room}"
         local_tz = ZoneInfo(self.hass.config.time_zone)
         start_time = datetime.combine(day, lesson.start_time).astimezone(local_tz)
         end_time = datetime.combine(day, lesson.end_time).astimezone(local_tz)
         lesson_subject = lesson.subject.name if lesson.subject else "Unknown Subject"
         lesson_subject_prefix = "[Canceled] " if lesson.is_cancelled else ""
+
         cal_event = CalendarEvent(
             start=start_time,
             end=end_time,
             summary= lesson_subject_prefix + lesson_subject,
-            description=f"Teacher(s): {teachers}",
+            description=description,
             location=room
         )
         return cal_event
