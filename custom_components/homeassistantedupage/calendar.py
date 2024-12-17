@@ -19,11 +19,15 @@ async def async_setup_entry(hass, entry, async_add_entities: AddEntitiesCallback
 
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
-    edupage_canteen_calendar = EdupageCanteenCalendar(coordinator, entry.data)
-    async_add_entities([edupage_canteen_calendar])
-
     edupage_calendar = EdupageCalendar(coordinator, entry.data)
     async_add_entities([edupage_calendar])
+
+    if coordinator.data.get("canteen_calendar_enabled", {}):
+        edupage_canteen_calendar = EdupageCanteenCalendar(coordinator, entry.data)
+        async_add_entities([edupage_canteen_calendar])
+        _LOGGER.debug("Canteen calendar added")
+    else:
+        _LOGGER.debug("Canteen calendar skipped, calendar disabled due to exceptions")
 
     _LOGGER.debug("CALENDAR async_setup_entry finished.")
 

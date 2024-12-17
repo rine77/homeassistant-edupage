@@ -95,9 +95,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         timetable_data_canceled[current_date] = canceled_lessons
 
                 canteen_menu_data = {}
+                canteen_calendar_enabled = True
                 for offset in range(14):
                     current_date = today + timedelta(days=offset)
-                    lunch = await edupage.get_lunches(current_date)
+                    try:
+                        lunch = await edupage.get_lunches(current_date)
+                    except Exception as e:
+                        _LOGGER.error(f"Failed to fetch lunch data for {current_date}: {e}")
+                        lunch = None
+                        canteen_calendar_enabled = False
                     meals_to_add = []
                     if lunch is not None and lunch.menus is not None and len(lunch.menus) > 0:
                         _LOGGER.debug(f"Lunch for {current_date}: {lunch}")
@@ -115,6 +121,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     "subjects": subjects,
                     "timetable": timetable_data,
                     "canteen_menu": canteen_menu_data,
+                    "canteen_calendar_enabled": canteen_calendar_enabled,
                     "cancelled_lessons": timetable_data_canceled,
                     "notifications": notifications,
                 }
