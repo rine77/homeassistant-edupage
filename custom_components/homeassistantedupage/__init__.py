@@ -104,6 +104,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         _LOGGER.error(f"Failed to fetch lunch data for {current_date}: {e}")
                         lunch = None
                         canteen_calendar_enabled = False
+                        break
                     meals_to_add = []
                     if lunch is not None and lunch.menus is not None and len(lunch.menus) > 0:
                         _LOGGER.debug(f"Lunch for {current_date}: {lunch}")
