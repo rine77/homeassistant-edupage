@@ -5,6 +5,8 @@ from typing import Optional
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from zoneinfo import ZoneInfo
 from edupage_api.timetables import Lesson
@@ -13,21 +15,25 @@ from edupage_api.lunches import Lunch
 _LOGGER = logging.getLogger("custom_components.homeassistant_edupage")
 _LOGGER.debug("CALENDAR Edupage calendar.py is being loaded")
 
-async def async_setup_entry(hass, entry, async_add_entities: AddEntitiesCallback) -> None:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
     """Set up Edupage calendar entities."""
     _LOGGER.debug("CALENDAR called async_setup_entry")
 
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
+    calendars = []
+
     edupage_calendar = EdupageCalendar(coordinator, entry.data)
-    async_add_entities([edupage_calendar])
+    calendars.append(edupage_calendar)
 
     if coordinator.data.get("canteen_calendar_enabled", {}):
         edupage_canteen_calendar = EdupageCanteenCalendar(coordinator, entry.data)
-        async_add_entities([edupage_canteen_calendar])
+        calendars.append(edupage_canteen_calendar)
         _LOGGER.debug("Canteen calendar added")
     else:
         _LOGGER.debug("Canteen calendar skipped, calendar disabled due to exceptions")
+
+    async_add_entities(calendars)
 
     _LOGGER.debug("CALENDAR async_setup_entry finished.")
 
